@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { timingSafeEqual } from "node:crypto";
 
 import { publicEnv, serverEnv } from "@/lib/env";
+import type { Database } from "@/lib/supabase/database.types";
 
 // Llamado a diario por el cron de Vercel (vercel.json) para que Supabase Free
 // no pause el proyecto por inactividad. Vercel envía `Authorization: Bearer $CRON_SECRET`.
@@ -18,7 +19,7 @@ export async function GET(request: Request) {
     return Response.json({ ok: false }, { status: 401 });
   }
 
-  const supabase = createClient(
+  const supabase = createClient<Database>(
     publicEnv.NEXT_PUBLIC_SUPABASE_URL,
     publicEnv.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     { auth: { persistSession: false } },

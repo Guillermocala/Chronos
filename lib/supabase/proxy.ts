@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { isAllowedEmail, publicEnv } from "@/lib/env";
+import type { Database } from "@/lib/supabase/database.types";
 
 const PUBLIC_PATHS = ["/login"];
 
@@ -29,7 +30,7 @@ function redirectWithSession(
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
-  const supabase = createServerClient(
+  const supabase = createServerClient<Database>(
     publicEnv.NEXT_PUBLIC_SUPABASE_URL,
     publicEnv.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     {
