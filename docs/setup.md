@@ -30,7 +30,7 @@ El repo trae configurados tres servidores. Necesitan estas variables en el **ent
 | Variable | Valor |
 |---|---|
 | `SUPABASE_PROJECT_REF` | El id del proyecto (Supabase → Project Settings → General → Reference ID) |
-| `GITHUB_MCP_PAT` | Token fine-grained de GitHub con acceso de lectura a los repos Chronos y chronos-backups |
+| `GITHUB_MCP_PAT` | Token fine-grained de GitHub con acceso de lectura a los repos Chronos y chronos-backups. Sin ella, el MCP de GitHub falla con "Authorization header is badly formatted". |
 
 En Windows (PowerShell, una sola vez; reiniciar VS Code después):
 ```powershell
@@ -38,7 +38,7 @@ En Windows (PowerShell, una sola vez; reiniciar VS Code después):
 [Environment]::SetEnvironmentVariable("GITHUB_MCP_PAT", "<token>", "User")
 ```
 - **Supabase** y **Vercel** piden iniciar sesión con OAuth la primera vez: se abre el navegador desde el comando `/mcp` de Claude Code.
-- Supabase arranca en `read_only=true`. Cuando empiece la fase de migraciones, se quita ese parámetro de `.mcp.json`.
+- Supabase arranca en `read_only=true`. Las migraciones se aplican con el CLI (`npm run db:push`), no con el MCP.
 
 ## 4. Skills de Claude Code
 Están en `.claude/skills/` y versionadas en `skills-lock.json`:
@@ -49,21 +49,39 @@ Están en `.claude/skills/` y versionadas en `skills-lock.json`:
 
 Para actualizarlas: `npx skills update`.
 
-## 5. Servicios en la nube (ya creados)
+## 5. Servicios en la nube
 
-### Supabase
-- [ ] En Auth → Sign In / Providers, desactivar "Allow new users to sign up"
-- [ ] Activar Email (magic link). GitHub OAuth es opcional.
-- [ ] Crear el único usuario manualmente: Auth → Users → Add user
-- [ ] En Auth → URL Configuration, poner como Site URL el dominio de Vercel y en Redirect URLs `https://<dominio>/**` y `http://localhost:3000/**`
+### Supabase: datos a anotar (gestor de contraseñas)
+- **Reference ID**: *Project Settings → General*
+- **Project URL**: *Project Settings → Data API*
+- **Publishable key** (`sb_publishable_...`) y **Secret key** (`sb_secret_...`): *Project Settings → API Keys*. La secret key **nunca** va a Vercel ni al navegador.
+- **Contraseña de la base de datos**: si se olvidó, *Project Settings → Database → Reset database password*
+
+### Supabase: Auth
+- [ ] *Authentication → Sign In / Providers*: Email activado y **Allow new users to sign up = OFF**
+- [ ] *Authentication → Users → Add user → Create new user*: email + contraseña + **Auto Confirm User**
+- [ ] *Authentication → URL Configuration*: Site URL = `https://<proyecto>.vercel.app`; Redirect URLs = `https://<proyecto>.vercel.app/**` y `http://localhost:3000/**`
+
+### Supabase: base de datos
+Las tablas **no se crean en el dashboard**. Salen de las migraciones en `supabase/migrations/`:
+```bash
+npx supabase login                          # abre el navegador
+npx supabase link --project-ref <ref>       # pide la contraseña de la DB
+npm run db:push                             # aplica las migraciones pendientes
+npm run db:types                            # regenera lib/supabase/database.types.ts
+```
 
 ### Vercel (plan Hobby)
-- [ ] Proyecto importado desde GitHub (Framework: Next.js; el resto de valores por defecto)
-- [ ] Settings → Environment Variables: las de `.env.example`
+- [ ] Proyecto importado desde GitHub (Framework: Next.js)
+- [ ] *Settings → Environment Variables*: las de `.env.example`. Las `NEXT_PUBLIC_*` llevan visibilidad `config`; `CRON_SECRET` y `GITHUB_DISPATCH_TOKEN` van como `secret`.
+- [ ] Después del deploy, *Settings → Cron Jobs* muestra `/api/health`. Con "Run" se prueba a mano.
 
 ### GitHub
-- [ ] El repo privado `chronos-backups` existe
-- [ ] Secrets de Actions en Chronos: `SUPABASE_DB_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `BACKUPS_REPO_TOKEN`. Se usan en la fase de backups.
+- [ ] Repo privado `chronos-backups` creado
+- [ ] Secrets de Actions en Chronos (fase de backups):
+  - `SUPABASE_SECRET_KEY`
+  - `SUPABASE_DB_URL`: *Connect → Session pooler*, con la contraseña
+  - `BACKUPS_REPO_TOKEN`
 
 ## Nota sobre OneDrive
 El proyecto está dentro de OneDrive. Conviene excluir `node_modules/` y `.next/` de la sincronización: clic derecho → "Liberar espacio", o mover el repo fuera de OneDrive. Git ya es el respaldo del código.
