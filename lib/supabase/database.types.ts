@@ -392,6 +392,7 @@ export type Database = {
           doc_kind: Database["public"]["Enums"]["doc_kind"] | null
           doc_url: string | null
           due_date: string | null
+          estimated_hours: number | null
           id: string
           is_ticket_candidate: boolean
           kind: Database["public"]["Enums"]["task_kind"]
@@ -417,6 +418,7 @@ export type Database = {
           doc_kind?: Database["public"]["Enums"]["doc_kind"] | null
           doc_url?: string | null
           due_date?: string | null
+          estimated_hours?: number | null
           id?: string
           is_ticket_candidate?: boolean
           kind?: Database["public"]["Enums"]["task_kind"]
@@ -442,6 +444,7 @@ export type Database = {
           doc_kind?: Database["public"]["Enums"]["doc_kind"] | null
           doc_url?: string | null
           due_date?: string | null
+          estimated_hours?: number | null
           id?: string
           is_ticket_candidate?: boolean
           kind?: Database["public"]["Enums"]["task_kind"]

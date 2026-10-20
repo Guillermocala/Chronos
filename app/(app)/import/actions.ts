@@ -20,6 +20,7 @@ const itemSchema = z.object({
   tags: z.array(z.string().max(40)).max(20),
   waiting_on: z.string().trim().max(200).nullable(),
   doc_url: z.string().nullable(),
+  estimated_hours: z.number().min(0).max(999).nullable(),
 });
 
 const importSchema = z.object({
@@ -74,6 +75,7 @@ export async function importDictation(payload: ImportPayload): Promise<ActionRes
       doc_url: drive?.url ?? null,
       doc_kind: drive?.kind ?? null,
       is_ticket_candidate: item.type === "ticket",
+      estimated_hours: item.estimated_hours,
     };
   });
 

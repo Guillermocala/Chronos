@@ -168,6 +168,7 @@ export function ImportForm({ projects, today }: Props) {
                         tags: r.tags,
                         waiting_on: r.waiting_on,
                         doc_url: r.doc_url,
+                        estimated_hours: r.estimated_hours,
                       })),
                     }),
                   () => loadText(""),
