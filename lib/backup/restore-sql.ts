@@ -9,6 +9,7 @@ export const RESTORE_ORDER = [
   "payments",
   "time_entries",
   "note_action_items",
+  "recurring_tasks",
   "tasks",
 ] as const;
 export type RestoreTable = (typeof RESTORE_ORDER)[number];

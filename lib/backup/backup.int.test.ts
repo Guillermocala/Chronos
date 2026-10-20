@@ -1,37 +1,20 @@
 // Integración: backup incremental y restauración contra Postgres real (PGlite)
 // con las migraciones del proyecto.
 
-import { PGlite } from "@electric-sql/pglite";
-import { mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
+import type { PGlite } from "@electric-sql/pglite";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+
+import { freshDb, MIGRATIONS_DIR } from "@/lib/testing/pglite";
 
 import { findUserId } from "./export";
 import { buildRestoreSql } from "./restore-sql";
 import { readBackupDir, runBackup } from "./run";
 import type { Db } from "./types";
 
-const MIGRATIONS = join(process.cwd(), "supabase", "migrations");
 const USER = "11111111-1111-1111-1111-111111111111";
-
-// Lo mínimo de Supabase que necesitan las migraciones.
-const SUPABASE_STUBS = `
-  create role anon nologin; create role authenticated nologin;
-  create schema auth;
-  create table auth.users (id uuid primary key, email text);
-  create function auth.uid() returns uuid language sql stable as
-    $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
-`;
-
-async function freshDb(): Promise<PGlite> {
-  const db = new PGlite();
-  await db.exec(SUPABASE_STUBS);
-  for (const file of readdirSync(MIGRATIONS).filter((f) => f.endsWith(".sql")).sort()) {
-    await db.exec(readFileSync(join(MIGRATIONS, file), "utf8"));
-  }
-  return db;
-}
 
 const asDb = (pg: PGlite): Db => ({ query: (sql, params) => pg.query(sql, params) as never });
 
@@ -45,7 +28,7 @@ describe("backup incremental + restauración", () => {
     runBackup(db, {
       userId: USER,
       outDir: out,
-      schemaDir: MIGRATIONS,
+      schemaDir: MIGRATIONS_DIR,
       mode,
       trigger: "manual",
       today: "2026-10-22",

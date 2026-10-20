@@ -344,6 +344,93 @@ export type Database = {
         }
         Relationships: []
       }
+      recurring_tasks: {
+        Row: {
+          active: boolean
+          created_at: string
+          deleted_at: string | null
+          doc_kind: Database["public"]["Enums"]["doc_kind"] | null
+          doc_url: string | null
+          frequency: Database["public"]["Enums"]["recurrence_frequency"]
+          id: string
+          interval: number
+          kind: Database["public"]["Enums"]["task_kind"]
+          lead_days: number
+          month_day: number | null
+          next_due: string
+          notes: string | null
+          priority: number
+          project_id: string | null
+          tags: string[]
+          title: string
+          updated_at: string
+          user_id: string
+          waiting_on: string | null
+          weekday: number | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          deleted_at?: string | null
+          doc_kind?: Database["public"]["Enums"]["doc_kind"] | null
+          doc_url?: string | null
+          frequency: Database["public"]["Enums"]["recurrence_frequency"]
+          id?: string
+          interval?: number
+          kind?: Database["public"]["Enums"]["task_kind"]
+          lead_days?: number
+          month_day?: number | null
+          next_due: string
+          notes?: string | null
+          priority?: number
+          project_id?: string | null
+          tags?: string[]
+          title: string
+          updated_at?: string
+          user_id?: string
+          waiting_on?: string | null
+          weekday?: number | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          deleted_at?: string | null
+          doc_kind?: Database["public"]["Enums"]["doc_kind"] | null
+          doc_url?: string | null
+          frequency?: Database["public"]["Enums"]["recurrence_frequency"]
+          id?: string
+          interval?: number
+          kind?: Database["public"]["Enums"]["task_kind"]
+          lead_days?: number
+          month_day?: number | null
+          next_due?: string
+          notes?: string | null
+          priority?: number
+          project_id?: string | null
+          tags?: string[]
+          title?: string
+          updated_at?: string
+          user_id?: string
+          waiting_on?: string | null
+          weekday?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recurring_tasks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_last_change"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "recurring_tasks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sprints: {
         Row: {
           created_at: string
@@ -422,6 +509,7 @@ export type Database = {
           planned_on: string | null
           priority: number
           project_id: string | null
+          recurring_task_id: string | null
           source_note_id: string | null
           status: Database["public"]["Enums"]["task_status"]
           tags: string[]
@@ -448,6 +536,7 @@ export type Database = {
           planned_on?: string | null
           priority?: number
           project_id?: string | null
+          recurring_task_id?: string | null
           source_note_id?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           tags?: string[]
@@ -474,6 +563,7 @@ export type Database = {
           planned_on?: string | null
           priority?: number
           project_id?: string | null
+          recurring_task_id?: string | null
           source_note_id?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           tags?: string[]
@@ -503,6 +593,13 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_recurring_task_id_fkey"
+            columns: ["recurring_task_id"]
+            isOneToOne: false
+            referencedRelation: "recurring_tasks"
             referencedColumns: ["id"]
           },
           {
@@ -773,6 +870,20 @@ export type Database = {
       }
     }
     Functions: {
+      clamp_month_day: {
+        Args: { md: number; month_start: string }
+        Returns: string
+      }
+      generate_my_recurring_tasks: { Args: never; Returns: number }
+      next_occurrence: {
+        Args: {
+          d: string
+          freq: Database["public"]["Enums"]["recurrence_frequency"]
+          md: number
+          n: number
+        }
+        Returns: string
+      }
       ping: { Args: never; Returns: string }
     }
     Enums: {
@@ -786,6 +897,7 @@ export type Database = {
       payment_kind: "advance" | "partial" | "final" | "monthly" | "extra"
       payment_status: "expected" | "received"
       project_phase: "active" | "delivered" | "support" | "closed"
+      recurrence_frequency: "daily" | "weekly" | "monthly"
       task_auto_source: "delivery" | "payment"
       task_kind: "todo" | "follow_up"
       task_status: "open" | "waiting" | "done" | "dismissed"
@@ -928,6 +1040,7 @@ export const Constants = {
       payment_kind: ["advance", "partial", "final", "monthly", "extra"],
       payment_status: ["expected", "received"],
       project_phase: ["active", "delivered", "support", "closed"],
+      recurrence_frequency: ["daily", "weekly", "monthly"],
       task_auto_source: ["delivery", "payment"],
       task_kind: ["todo", "follow_up"],
       task_status: ["open", "waiting", "done", "dismissed"],

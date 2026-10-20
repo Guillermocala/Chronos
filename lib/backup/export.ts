@@ -34,13 +34,14 @@ export async function collectProject(db: Db, projectId: string): Promise<Project
   const by = (table: string, column = "project_id") =>
     rows(db, `select to_jsonb(t) as row from public.${table} t where t.${column} = $1`, [projectId]);
 
-  const [project, payments, sprints, tickets, tasks, notes] = await Promise.all([
+  const [project, payments, sprints, tickets, tasks, notes, recurring] = await Promise.all([
     by("projects", "id"),
     by("payments"),
     by("sprints"),
     by("tickets"),
     by("tasks"),
     by("meeting_notes"),
+    by("recurring_tasks"),
   ]);
   const [time_entries, action_items] = await Promise.all([
     rows(
@@ -56,12 +57,12 @@ export async function collectProject(db: Db, projectId: string): Promise<Project
       [projectId],
     ),
   ]);
-  return { project, payments, sprints, tickets, time_entries, tasks, notes, action_items };
+  return { project, payments, sprints, tickets, time_entries, tasks, notes, action_items, recurring };
 }
 
-/** Tareas y notas sin proyecto (siempre se exportan: son pocas). */
+/** Tareas, notas y reglas recurrentes sin proyecto (siempre se exportan: son pocas). */
 export async function collectGlobal(db: Db, userId: string): Promise<GlobalBundle> {
-  const [tasks, notes, action_items] = await Promise.all([
+  const [tasks, notes, action_items, recurring] = await Promise.all([
     rows(db, "select to_jsonb(t) as row from public.tasks t where t.user_id = $1 and t.project_id is null", [userId]),
     rows(
       db,
@@ -75,6 +76,11 @@ export async function collectGlobal(db: Db, userId: string): Promise<GlobalBundl
         where n.user_id = $1 and n.project_id is null`,
       [userId],
     ),
+    rows(
+      db,
+      "select to_jsonb(r) as row from public.recurring_tasks r where r.user_id = $1 and r.project_id is null",
+      [userId],
+    ),
   ]);
-  return { tasks, notes, action_items };
+  return { tasks, notes, action_items, recurring };
 }
