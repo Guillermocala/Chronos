@@ -86,7 +86,7 @@ export function AppSidebar({ footer }: { footer: ReactNode }) {
               <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary font-semibold text-primary-foreground">
                 C
               </span>
-              <span className="truncate font-semibold">Chronos</span>
+              <span className="truncate font-semibold" translate="no">Chronos</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>

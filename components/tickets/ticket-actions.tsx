@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { deleteTicket, markExtraBillable } from "@/app/(app)/tickets/actions";
+import { restoreDeleted } from "@/app/(app)/undo-actions";
 import { MoneyInput } from "@/components/projects/money-input";
 import { Button } from "@/components/ui/button";
 import {
@@ -88,7 +89,11 @@ export function TicketActions({ ticket, sprints, suggestedExtraCOP }: Props) {
         size="sm"
         disabled={pending}
         onClick={() =>
-          run(() => deleteTicket(ticket.id), () => router.push(`/projects/${ticket.project_id}`))
+          run(
+            () => deleteTicket(ticket.id),
+            () => router.push(`/projects/${ticket.project_id}`),
+            () => restoreDeleted("tickets", ticket.id),
+          )
         }
       >
         <Trash2Icon data-icon="inline-start" />

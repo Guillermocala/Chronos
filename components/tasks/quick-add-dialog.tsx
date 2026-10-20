@@ -68,7 +68,7 @@ export function QuickAddDialog({ projectId, defaultMyDay = false, defaultOpen = 
                 autoComplete="off"
                 autoFocus
                 required
-                placeholder="Llamar al contador !mañana #alta"
+                placeholder="Llamar al contador !mañana #alta…"
               />
               <FieldDescription>
                 @PREFIJO proyecto · !hoy / !viernes / !25/10 fecha · #alta prioridad ·

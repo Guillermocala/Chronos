@@ -3,8 +3,15 @@
 import { SearchIcon } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
-import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
-import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
+import {
+  NativeSelect,
+  NativeSelectOption,
+} from "@/components/ui/native-select";
 
 type Props = {
   project?: string;
@@ -34,14 +41,23 @@ export function NoteFilters({ project, q, projects }: Props) {
         className="w-full max-w-xs"
         onSubmit={(e) => {
           e.preventDefault();
-          go({ q: String(new FormData(e.currentTarget).get("q") ?? "").trim() || undefined });
+          go({
+            q:
+              String(new FormData(e.currentTarget).get("q") ?? "").trim() ||
+              undefined,
+          });
         }}
       >
         <InputGroup>
           <InputGroupAddon>
             <SearchIcon />
           </InputGroupAddon>
-          <InputGroupInput name="q" defaultValue={q} placeholder="Buscar por título" aria-label="Buscar notas" />
+          <InputGroupInput
+            name="q"
+            defaultValue={q}
+            placeholder="Buscar por título…"
+            aria-label="Buscar notas"
+          />
         </InputGroup>
       </form>
       <NativeSelect

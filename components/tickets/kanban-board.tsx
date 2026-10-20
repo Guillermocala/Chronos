@@ -28,8 +28,13 @@ import { moveTicket } from "@/app/(app)/tickets/actions";
 import { showResult } from "@/hooks/use-action-toast";
 import type { TicketWithHours } from "@/lib/data/tickets";
 import { formatCOP } from "@/lib/format";
-import { TICKET_STATUS_LABELS, TICKET_STATUSES, type TicketStatus } from "@/lib/tickets/schema";
+import {
+  TICKET_STATUS_LABELS,
+  TICKET_STATUSES,
+  type TicketStatus,
+} from "@/lib/tickets/schema";
 import { formatDuration } from "@/lib/time";
+import { cn } from "@/lib/utils";
 
 import { TicketCard } from "./ticket-card";
 
@@ -43,14 +48,20 @@ type Props = {
 };
 
 function toColumns(tickets: TicketWithHours[]): Columns {
-  const columns = Object.fromEntries(TICKET_STATUSES.map((s) => [s, [] as TicketWithHours[]])) as Columns;
-  for (const t of [...tickets].sort((a, b) => a.position - b.position)) columns[t.status].push(t);
+  const columns = Object.fromEntries(
+    TICKET_STATUSES.map((s) => [s, [] as TicketWithHours[]]),
+  ) as Columns;
+  for (const t of [...tickets].sort((a, b) => a.position - b.position))
+    columns[t.status].push(t);
   return columns;
 }
 
 function columnOf(columns: Columns, id: string): TicketStatus | null {
-  if ((TICKET_STATUSES as readonly string[]).includes(id)) return id as TicketStatus;
-  return TICKET_STATUSES.find((s) => columns[s].some((t) => t.id === id)) ?? null;
+  if ((TICKET_STATUSES as readonly string[]).includes(id))
+    return id as TicketStatus;
+  return (
+    TICKET_STATUSES.find((s) => columns[s].some((t) => t.id === id)) ?? null
+  );
 }
 
 export function KanbanBoard({ tickets, values, runningTicketId }: Props) {
@@ -65,11 +76,16 @@ export function KanbanBoard({ tickets, values, runningTicketId }: Props) {
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 6 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 200, tolerance: 6 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
   );
 
-  const find = (id: string) => TICKET_STATUSES.flatMap((s) => columns[s]).find((t) => t.id === id);
+  const find = (id: string) =>
+    TICKET_STATUSES.flatMap((s) => columns[s]).find((t) => t.id === id);
   const label = (id: string | number) => find(String(id))?.code ?? "ticket";
   const columnLabel = (id: string | number | undefined) => {
     const col = id === undefined ? null : columnOf(columns, String(id));
@@ -78,9 +94,12 @@ export function KanbanBoard({ tickets, values, runningTicketId }: Props) {
 
   const announcements: Announcements = {
     onDragStart: ({ active }) => `Tomaste ${label(active.id)}.`,
-    onDragOver: ({ active, over }) => `${label(active.id)} sobre ${columnLabel(over?.id)}.`,
-    onDragEnd: ({ active, over }) => `${label(active.id)} soltado en ${columnLabel(over?.id)}.`,
-    onDragCancel: ({ active }) => `Se canceló el movimiento de ${label(active.id)}.`,
+    onDragOver: ({ active, over }) =>
+      `${label(active.id)} sobre ${columnLabel(over?.id)}.`,
+    onDragEnd: ({ active, over }) =>
+      `${label(active.id)} soltado en ${columnLabel(over?.id)}.`,
+    onDragCancel: ({ active }) =>
+      `Se canceló el movimiento de ${label(active.id)}.`,
   };
 
   function handleDragStart({ active }: DragStartEvent) {
@@ -100,7 +119,11 @@ export function KanbanBoard({ tickets, values, runningTicketId }: Props) {
       return {
         ...prev,
         [from]: prev[from].filter((t) => t.id !== active.id),
-        [to]: [...prev[to].slice(0, index), { ...moving, status: to }, ...prev[to].slice(index)],
+        [to]: [
+          ...prev[to].slice(0, index),
+          { ...moving, status: to },
+          ...prev[to].slice(index),
+        ],
       };
     });
   }
@@ -121,7 +144,8 @@ export function KanbanBoard({ tickets, values, runningTicketId }: Props) {
 
     const original = tickets.find((t) => t.id === active.id);
     const index = reordered.findIndex((t) => t.id === active.id);
-    if (original?.status === column && index === from && from === overIndex) return;
+    if (original?.status === column && index === from && from === overIndex)
+      return;
 
     const result = await moveTicket({
       id: String(active.id),
@@ -157,7 +181,12 @@ export function KanbanBoard({ tickets, values, runningTicketId }: Props) {
         },
       }}
     >
-      <div className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
+      <div
+        className={cn(
+          "-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0",
+          activeId && "select-none",
+        )}
+      >
         {TICKET_STATUSES.map((status) => (
           <Column
             key={status}
@@ -170,7 +199,11 @@ export function KanbanBoard({ tickets, values, runningTicketId }: Props) {
       </div>
       <DragOverlay>
         {active && (
-          <TicketCard ticket={active} value={values[active.id] ?? null} running={active.id === runningTicketId} />
+          <TicketCard
+            ticket={active}
+            value={values[active.id] ?? null}
+            running={active.id === runningTicketId}
+          />
         )}
       </DragOverlay>
     </DndContext>
@@ -189,7 +222,10 @@ function Column({
   runningTicketId: string | null;
 }) {
   const { setNodeRef } = useDroppable({ id: status });
-  const estimated = tickets.reduce((sum, t) => sum + Number(t.estimated_hours ?? 0), 0);
+  const estimated = tickets.reduce(
+    (sum, t) => sum + Number(t.estimated_hours ?? 0),
+    0,
+  );
   const value = tickets.reduce((sum, t) => sum + (values[t.id] ?? 0), 0);
 
   return (
@@ -199,14 +235,19 @@ function Column({
     >
       <header className="flex items-baseline justify-between gap-2 px-1">
         <h2 id={`column-${status}`} className="text-sm font-semibold">
-          {TICKET_STATUS_LABELS[status]} <span className="text-muted-foreground">{tickets.length}</span>
+          {TICKET_STATUS_LABELS[status]}{" "}
+          <span className="text-muted-foreground">{tickets.length}</span>
         </h2>
         <span className="text-xs text-muted-foreground tabular-nums">
           {formatDuration(estimated)}
           {value > 0 && ` · ${formatCOP(value)}`}
         </span>
       </header>
-      <SortableContext id={status} items={tickets.map((t) => t.id)} strategy={verticalListSortingStrategy}>
+      <SortableContext
+        id={status}
+        items={tickets.map((t) => t.id)}
+        strategy={verticalListSortingStrategy}
+      >
         <ul ref={setNodeRef} className="flex min-h-24 flex-col gap-2">
           {tickets.map((ticket) => (
             <SortableTicket
@@ -231,7 +272,14 @@ function SortableTicket({
   value: number | null;
   running: boolean;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
     id: ticket.id,
   });
 
@@ -244,7 +292,12 @@ function SortableTicket({
       {...listeners}
       aria-roledescription="ticket arrastrable"
     >
-      <TicketCard ticket={ticket} value={value} running={running} dragging={isDragging} />
+      <TicketCard
+        ticket={ticket}
+        value={value}
+        running={running}
+        dragging={isDragging}
+      />
     </li>
   );
 }

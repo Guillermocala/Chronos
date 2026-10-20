@@ -62,7 +62,7 @@ export function RecurringDialog({ projects, today, recurring, trigger, triggerLa
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger render={trigger}>{triggerLabel}</DialogTrigger>
-      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
+      <DialogContent className="max-h-[90dvh] overflow-y-auto overscroll-contain sm:max-w-lg">
         <form
           action={(formData) => run(() => saveRecurring(formData), () => setOpen(false))}
           className="flex flex-col gap-4"
@@ -81,7 +81,7 @@ export function RecurringDialog({ projects, today, recurring, trigger, triggerLa
                 name="title"
                 required
                 defaultValue={recurring?.title}
-                placeholder="Enviar cuenta de cobro"
+                placeholder="Enviar cuenta de cobro…"
               />
             </Field>
             <Field>
@@ -215,7 +215,7 @@ export function RecurringDialog({ projects, today, recurring, trigger, triggerLa
               </Field>
               <Field>
                 <FieldLabel htmlFor={`${p}-tags`}>Etiquetas</FieldLabel>
-                <Input id={`${p}-tags`} name="tags" defaultValue={recurring?.tags.join(", ") ?? ""} placeholder="admin" />
+                <Input id={`${p}-tags`} name="tags" defaultValue={recurring?.tags.join(", ") ?? ""} placeholder="admin…" />
               </Field>
             </div>
             <Field>

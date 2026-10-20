@@ -20,6 +20,7 @@ import {
   snoozeTask,
 } from "@/app/(app)/tasks/actions";
 import { convertTaskToTicket } from "@/app/(app)/tickets/actions";
+import { restoreDeleted } from "@/app/(app)/undo-actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -76,7 +77,7 @@ export function TaskItem({ task, today, projects }: Props) {
           type="button"
           onClick={() => setEditing(true)}
           className={cn(
-            "text-left text-sm break-words",
+            "rounded-sm text-left text-sm break-words outline-none focus-visible:ring-2 focus-visible:ring-ring",
             done && "text-muted-foreground line-through",
           )}
         >
@@ -159,7 +160,7 @@ export function TaskItem({ task, today, projects }: Props) {
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
-            <DropdownMenuItem variant="destructive" onClick={() => run(() => deleteTask(task.id))}>
+            <DropdownMenuItem variant="destructive" onClick={() => run(() => deleteTask(task.id), undefined, () => restoreDeleted("tasks", task.id))}>
               <Trash2Icon />
               Eliminar
             </DropdownMenuItem>

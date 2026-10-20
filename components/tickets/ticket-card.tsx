@@ -5,7 +5,10 @@ import Link from "next/link";
 
 import { DocLink } from "@/components/tasks/doc-link";
 import { Badge } from "@/components/ui/badge";
-import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import {
+  NativeSelect,
+  NativeSelectOption,
+} from "@/components/ui/native-select";
 import { setTicketStatus } from "@/app/(app)/tickets/actions";
 import { useAction } from "@/hooks/use-action-toast";
 import type { TicketWithHours } from "@/lib/data/tickets";
@@ -32,7 +35,8 @@ type Props = {
 export function TicketCard({ ticket, value, running, dragging }: Props) {
   const { pending, run } = useAction();
   const overEstimate =
-    ticket.estimated_hours != null && ticket.logged_hours > Number(ticket.estimated_hours);
+    ticket.estimated_hours != null &&
+    ticket.logged_hours > Number(ticket.estimated_hours);
 
   return (
     <div
@@ -48,10 +52,19 @@ export function TicketCard({ ticket, value, running, dragging }: Props) {
           className="min-w-0 break-words hover:underline"
           onPointerDown={(e) => e.stopPropagation()}
         >
-          <span className="font-mono text-xs text-muted-foreground">{ticket.code}</span>{" "}
+          <span
+            className="font-mono text-xs text-muted-foreground"
+            translate="no"
+          >
+            {ticket.code}
+          </span>{" "}
           {ticket.title}
         </Link>
-        <TimerButton ticketId={ticket.id} code={ticket.code} running={running} />
+        <TimerButton
+          ticketId={ticket.id}
+          code={ticket.code}
+          running={running}
+        />
       </div>
       <div className="flex flex-wrap items-center gap-1.5 text-xs">
         {ticket.priority <= 2 && (
@@ -68,12 +81,17 @@ export function TicketCard({ ticket, value, running, dragging }: Props) {
         <Badge variant={overEstimate ? "destructive" : "outline"}>
           <ClockIcon data-icon="inline-start" />
           {formatDuration(ticket.logged_hours)}
-          {ticket.estimated_hours != null && ` / ${formatDuration(Number(ticket.estimated_hours))}`}
+          {ticket.estimated_hours != null &&
+            ` / ${formatDuration(Number(ticket.estimated_hours))}`}
         </Badge>
         {value !== null && value > 0 && (
-          <span className="text-muted-foreground tabular-nums">{formatCOP(value)}</span>
+          <span className="text-muted-foreground tabular-nums">
+            {formatCOP(value)}
+          </span>
         )}
-        {ticket.doc_url && ticket.doc_kind && <DocLink url={ticket.doc_url} kind={ticket.doc_kind} />}
+        {ticket.doc_url && ticket.doc_kind && (
+          <DocLink url={ticket.doc_url} kind={ticket.doc_kind} />
+        )}
       </div>
       {/* Alternativa al arrastre (celular, lectores de pantalla). */}
       <NativeSelect
@@ -82,7 +100,9 @@ export function TicketCard({ ticket, value, running, dragging }: Props) {
         value={ticket.status}
         disabled={pending}
         onPointerDown={(e) => e.stopPropagation()}
-        onChange={(e) => run(() => setTicketStatus(ticket.id, e.target.value as TicketStatus))}
+        onChange={(e) =>
+          run(() => setTicketStatus(ticket.id, e.target.value as TicketStatus))
+        }
         className="md:hidden"
       >
         {TICKET_STATUSES.map((s) => (

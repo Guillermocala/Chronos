@@ -128,4 +128,27 @@
   html {
     @apply font-sans;
   }
+  /* Sin retraso de doble toque en el celular; resaltado táctil sutil. */
+  a,
+  button,
+  input,
+  select,
+  textarea,
+  label,
+  [role="button"] {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* Respeta "reducir movimiento" del sistema (skeletons, diálogos, kanban). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

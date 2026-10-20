@@ -111,3 +111,11 @@ Cómo restaurar: ver el `README.md` dentro de `chronos-backups` (`npx tsx script
 
 ## Nota sobre OneDrive
 El proyecto está dentro de OneDrive. Conviene excluir `node_modules/` y `.next/` de la sincronización: clic derecho → "Liberar espacio", o mover el repo fuera de OneDrive. Git ya es el respaldo del código.
+
+## Instalar Chronos en el celular (PWA)
+- **Android (Chrome):** abre el sitio → menú ⋮ → **Instalar app**.
+- **iPhone (Safari):** abre el sitio → botón Compartir → **Agregar a inicio**.
+
+Abre directo en **Hoy**, sin la barra del navegador. Si mantienes presionado el ícono aparecen los atajos "Nueva tarea" e "Importar dictado". Sin conexión se muestra una página de aviso: los datos siempre se leen en vivo y no se guardan en el teléfono.
+
+Para cambiar el ícono, edita `lib/pwa/icon.tsx` y ejecuta `npx tsx scripts/generate-icons.tsx`.

@@ -45,7 +45,7 @@ export function TaskDialog({ task, projects, open, onOpenChange }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
+      <DialogContent className="max-h-[90dvh] overflow-y-auto overscroll-contain sm:max-w-lg">
         <form
           action={(formData) => run(() => updateTask(formData), () => onOpenChange(false))}
           className="flex flex-col gap-4"
@@ -89,7 +89,7 @@ export function TaskDialog({ task, projects, open, onOpenChange }: Props) {
                   id={`waiting-${task.id}`}
                   name="waiting_on"
                   defaultValue={task.waiting_on ?? ""}
-                  placeholder="Ana (cliente)"
+                  placeholder="Ana (cliente)…"
                 />
               </Field>
             )}
@@ -136,7 +136,7 @@ export function TaskDialog({ task, projects, open, onOpenChange }: Props) {
                 id={`tags-${task.id}`}
                 name="tags"
                 defaultValue={task.tags.join(", ")}
-                placeholder="personal, admin"
+                placeholder="personal, admin…"
               />
             </Field>
             <Field>

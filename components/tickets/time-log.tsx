@@ -4,6 +4,7 @@ import { Trash2Icon } from "lucide-react";
 import { useRef } from "react";
 
 import { deleteTimeEntry, logTime } from "@/app/(app)/tickets/time-actions";
+import { restoreDeleted } from "@/app/(app)/undo-actions";
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -40,7 +41,7 @@ export function TimeLog({ ticketId, entries, today }: { ticketId: string; entrie
           </Field>
           <Field>
             <FieldLabel htmlFor="log-duration">Duración</FieldLabel>
-            <Input id="log-duration" name="duration" required placeholder="1:30" autoComplete="off" />
+            <Input id="log-duration" name="duration" required placeholder="1:30…" autoComplete="off" />
           </Field>
           <Field>
             <FieldLabel htmlFor="log-note">Nota</FieldLabel>
@@ -77,7 +78,7 @@ export function TimeLog({ ticketId, entries, today }: { ticketId: string; entrie
                     size="icon-xs"
                     aria-label="Eliminar registro"
                     disabled={pending}
-                    onClick={() => run(() => deleteTimeEntry(e.id))}
+                    onClick={() => run(() => deleteTimeEntry(e.id), undefined, () => restoreDeleted("time_entries", e.id))}
                   >
                     <Trash2Icon />
                   </Button>

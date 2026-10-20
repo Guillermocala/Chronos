@@ -3,6 +3,7 @@
 import { PencilIcon, PlusIcon, RepeatIcon, Trash2Icon } from "lucide-react";
 
 import { deleteRecurring, toggleRecurring } from "@/app/(app)/tasks/recurring-actions";
+import { restoreDeleted } from "@/app/(app)/undo-actions";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -92,7 +93,7 @@ export function RecurringList({ items, projects, today }: Props) {
               size="icon-sm"
               aria-label={`Eliminar ${r.title}`}
               disabled={pending}
-              onClick={() => run(() => deleteRecurring(r.id))}
+              onClick={() => run(() => deleteRecurring(r.id), undefined, () => restoreDeleted("recurring_tasks", r.id))}
             >
               <Trash2Icon />
             </Button>

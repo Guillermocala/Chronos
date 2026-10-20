@@ -51,7 +51,7 @@ export function ProjectForm({ project }: { project?: Project }) {
                 required
                 maxLength={10}
                 defaultValue={project?.code_prefix}
-                placeholder="WEB"
+                placeholder="WEB…"
                 className="uppercase"
               />
             </Field>

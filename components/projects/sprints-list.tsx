@@ -4,6 +4,7 @@ import { PencilIcon, PlusIcon, Trash2Icon } from "lucide-react";
 import Link from "next/link";
 
 import { deleteSprint } from "@/app/(app)/projects/sprint-actions";
+import { restoreDeleted } from "@/app/(app)/undo-actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -123,7 +124,7 @@ export function SprintsList({ project, sprints, today, scopeHoursBySprint, scope
                         size="icon-xs"
                         aria-label={`Eliminar ${sprint.name}`}
                         disabled={pending}
-                        onClick={() => run(() => deleteSprint(sprint.id, project.id))}
+                        onClick={() => run(() => deleteSprint(sprint.id, project.id), undefined, () => restoreDeleted("sprints", sprint.id))}
                       >
                         <Trash2Icon />
                       </Button>

@@ -84,6 +84,16 @@ Chronos es un gestor personal de tickets, sprints y valor en COP por proyecto. L
   - burndown en el tablero del sprint;
   - CSV para Excel (`;`, coma decimal, BOM) en `/api/reports/{hours,payments,sprint}.csv`;
   - lógica pura en `lib/reports/`.
+- **Tareas recurrentes** (fase 6):
+  - tabla `recurring_tasks` (diaria, semanal o mensual, cada N, anticipación);
+  - la función `private.generate_recurring_tasks` corre cada día con **pg_cron** a las 6 a. m. y no crea alud de atrasadas;
+  - la misma regla está en `lib/recurrence.ts`, con un test de paridad SQL/TS.
+- **PWA:**
+  - `app/manifest.ts`, íconos con `ImageResponse` y `public/sw.js`, que solo sirve la página `/offline` y no cachea datos;
+  - el proxy deja públicos esos recursos.
+- **Accesibilidad:**
+  - enlace "Saltar al contenido", `prefers-reduced-motion` y foco visible;
+  - las acciones destructivas ofrecen **Deshacer** en el aviso (`restoreDeleted`, solo tablas permitidas).
 - **Notas:** `/notes` y `/notes/[id]` muestran los dictados importados con las tareas y tickets que salieron de cada uno.
 - **Backups** (fase 4, `lib/backup/` + `scripts/backup.ts`/`restore.ts` + `.github/workflows/backup.yml`):
   - el script se conecta con `pg` vía `SUPABASE_DB_URL`;

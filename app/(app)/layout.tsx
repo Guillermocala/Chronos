@@ -25,6 +25,13 @@ import { signOut } from "./actions";
 export default function AppLayout({ children }: LayoutProps<"/">) {
   return (
     <SidebarProvider>
+      {/* Primer elemento enfocable: salta el menú lateral con el teclado. */}
+      <a
+        href="#contenido"
+        className="sr-only z-50 rounded-md bg-background px-3 py-2 text-sm font-medium shadow focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:ring-2 focus:ring-ring"
+      >
+        Saltar al contenido
+      </a>
       <AppSidebar
         footer={
           <>
@@ -43,9 +50,15 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
         <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4 md:hidden">
           <SidebarTrigger />
           <Separator orientation="vertical" className="h-4" />
-          <span className="font-semibold">Chronos</span>
+          <span className="font-semibold" translate="no">
+            Chronos
+          </span>
         </header>
-        <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-6 sm:px-6">
+        <div
+          id="contenido"
+          tabIndex={-1}
+          className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-6 outline-none sm:px-6"
+        >
           <Suspense fallback={null}>
             <RunningTimer />
           </Suspense>
@@ -79,7 +92,9 @@ async function UserMenu() {
           <SidebarMenuButton type="submit" tooltip="Cerrar sesión">
             <LogOutIcon />
             <span className="flex min-w-0 flex-col text-left">
-              <span className="truncate text-xs text-muted-foreground">{email}</span>
+              <span className="truncate text-xs text-muted-foreground">
+                {email}
+              </span>
               <span>Cerrar sesión</span>
             </span>
           </SidebarMenuButton>

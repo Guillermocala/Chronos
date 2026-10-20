@@ -3,6 +3,7 @@
 import { CheckIcon, DownloadIcon, EllipsisIcon, PencilIcon, PlusIcon, RefreshCwIcon, Trash2Icon } from "lucide-react";
 
 import { regenerateMonthlyPayments } from "@/app/(app)/projects/actions";
+import { restoreDeleted } from "@/app/(app)/undo-actions";
 import { deletePayment, markPaymentReceived } from "@/app/(app)/projects/payment-actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -142,7 +143,7 @@ export function PaymentsTable({ project, payments, today }: Props) {
                           <DropdownMenuGroup>
                             <DropdownMenuItem
                               variant="destructive"
-                              onClick={() => run(() => deletePayment(payment.id))}
+                              onClick={() => run(() => deletePayment(payment.id), undefined, () => restoreDeleted("payments", payment.id))}
                             >
                               <Trash2Icon />
                               Eliminar

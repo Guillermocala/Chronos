@@ -47,7 +47,7 @@ export function TicketDialog({ projectId, sprints, ticket, defaultSprintId, trig
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger render={trigger}>{triggerLabel}</DialogTrigger>
-      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
+      <DialogContent className="max-h-[90dvh] overflow-y-auto overscroll-contain sm:max-w-lg">
         <form
           action={(formData) => run(() => saveTicket(formData), () => setOpen(false))}
           className="flex flex-col gap-4"
@@ -140,7 +140,7 @@ export function TicketDialog({ projectId, sprints, ticket, defaultSprintId, trig
             )}
             <Field>
               <FieldLabel htmlFor={`${p}-tags`}>Etiquetas</FieldLabel>
-              <Input id={`${p}-tags`} name="tags" defaultValue={ticket?.tags.join(", ") ?? ""} placeholder="front, api" />
+              <Input id={`${p}-tags`} name="tags" defaultValue={ticket?.tags.join(", ") ?? ""} placeholder="front, api…" />
             </Field>
             <Field>
               <FieldLabel htmlFor={`${p}-doc`}>Documento o carpeta de Drive</FieldLabel>
