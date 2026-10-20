@@ -133,9 +133,9 @@ async function TicketContent({ params }: Pick<PageProps<"/tickets/[id]">, "param
         )}
         {ticket.doc_url && ticket.doc_kind && <DocLink url={ticket.doc_url} kind={ticket.doc_kind} />}
         {source_note && (
-          <span className="text-muted-foreground">
+          <Link href={`/notes/${source_note.id}`} className="text-muted-foreground hover:underline">
             Origen: {source_note.title} ({formatDate(source_note.meeting_date)})
-          </span>
+          </Link>
         )}
         {ticket.tags.map((tag) => (
           <span key={tag} className="text-muted-foreground">

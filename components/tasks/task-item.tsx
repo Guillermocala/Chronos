@@ -10,6 +10,7 @@ import {
   TicketIcon,
   Trash2Icon,
 } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 
 import {
@@ -102,6 +103,11 @@ export function TaskItem({ task, today, projects }: Props) {
             <Badge variant="outline">
               Convertir a ticket{task.estimated_hours != null && ` · ~${task.estimated_hours} h`}
             </Badge>
+          )}
+          {task.source_note_id && (
+            <Link href={`/notes/${task.source_note_id}`} className="hover:underline">
+              Ver nota
+            </Link>
           )}
           {task.tags.map((tag) => (
             <span key={tag}>#{tag}</span>

@@ -6,6 +6,7 @@ import {
   FolderKanbanIcon,
   ImportIcon,
   ListTodoIcon,
+  NotebookTextIcon,
   SettingsIcon,
   SunIcon,
   type LucideIcon,
@@ -49,17 +50,13 @@ const NAV: { label: string; items: NavItem[] }[] = [
     label: "Trabajo",
     items: [
       { href: "/projects", label: "Proyectos", icon: FolderKanbanIcon },
-      {
-        href: "/reports",
-        label: "Reportes",
-        icon: ChartColumnIcon,
-        soon: true,
-      },
+      { href: "/reports", label: "Reportes", icon: ChartColumnIcon },
     ],
   },
   {
     label: "Granola",
     items: [
+      { href: "/notes", label: "Notas", icon: NotebookTextIcon },
       { href: "/import", label: "Importar dictado", icon: ImportIcon },
       { href: "/guide", label: "Guía de dictado", icon: BookOpenIcon },
     ],

@@ -79,6 +79,12 @@ Chronos es un gestor personal de tickets, sprints y valor en COP por proyecto. L
   - el parser está en `lib/granola/parse.ts`; "+ Tarea" acepta los mismos marcadores;
   - `/guide` tiene las instrucciones para Granola, las plantillas y un probador;
   - `/import` muestra una vista previa editable, guarda la nota en `meeting_notes` y crea los ítems. Las líneas de Tickets quedan como tareas `is_ticket_candidate` hasta la fase de tickets.
+- **Reportes** (fase 5):
+  - `/reports`: cobros por mes, horas por semana, horas y tarifa por proyecto. Usa Recharts mediante el `chart` de shadcn, con los colores `--chart-1..5` validados con la skill dataviz y una tabla equivalente debajo de cada gráfica;
+  - burndown en el tablero del sprint;
+  - CSV para Excel (`;`, coma decimal, BOM) en `/api/reports/{hours,payments,sprint}.csv`;
+  - lógica pura en `lib/reports/`.
+- **Notas:** `/notes` y `/notes/[id]` muestran los dictados importados con las tareas y tickets que salieron de cada uno.
 - **Backups** (fase 4, `lib/backup/` + `scripts/backup.ts`/`restore.ts` + `.github/workflows/backup.yml`):
   - el script se conecta con `pg` vía `SUPABASE_DB_URL`;
   - la vista `project_last_change` decide qué proyectos exportar contra `manifest.json`;
