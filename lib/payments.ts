@@ -24,10 +24,12 @@ export function buildMonthlySchedule({
   billing_day,
 }: MonthlyScheduleInput): ScheduledPayment[] {
   const day = Math.min(Math.max(billing_day ?? 1, 1), 28);
-  let [year, month] = start_date.split("-").map(Number);
-  if (daysBetween(start_date, makeISODate(year, month, day)!) < 0) {
-    month += 1;
-  }
+  const [year, startMonth] = start_date.split("-").map(Number);
+  // Si el día de cobro ya pasó en el mes de inicio, empieza el mes siguiente.
+  const month =
+    daysBetween(start_date, makeISODate(year, startMonth, day)!) < 0
+      ? startMonth + 1
+      : startMonth;
 
   return Array.from({ length: contract_months }, (_, i) => {
     const m = month - 1 + i;
