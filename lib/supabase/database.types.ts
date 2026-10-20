@@ -528,7 +528,7 @@ export type Database = {
         }
         Insert: {
           billable?: boolean
-          code: string
+          code?: string
           created_at?: string
           deleted_at?: string | null
           description?: string | null
@@ -539,7 +539,7 @@ export type Database = {
           estimated_hours?: number | null
           id?: string
           kind?: Database["public"]["Enums"]["ticket_kind"]
-          number: number
+          number?: number
           position?: number
           priority?: number
           project_id: string
