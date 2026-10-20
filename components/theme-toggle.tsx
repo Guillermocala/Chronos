@@ -18,7 +18,8 @@ import { SidebarMenuButton } from "@/components/ui/sidebar";
 const OPTIONS = [
   { value: "light", label: "Claro", icon: SunIcon },
   { value: "dark", label: "Oscuro", icon: MoonIcon },
-  { value: "system", label: "Sistema", icon: MonitorIcon },
+  // Valor por defecto (layout): sigue el modo del dispositivo y cambia solo con él.
+  { value: "system", label: "Automático (dispositivo)", icon: MonitorIcon },
 ] as const;
 
 // El ícono cambia con clases dark: (CSS), no leyendo el tema en el render:
