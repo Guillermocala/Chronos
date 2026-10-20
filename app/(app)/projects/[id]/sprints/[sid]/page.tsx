@@ -1,18 +1,22 @@
-import { ArrowLeftIcon, PlusIcon } from "lucide-react";
+import { ArrowLeftIcon, DownloadIcon, PlusIcon } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 import { PageHeader } from "@/components/page-header";
+import { BurndownChart } from "@/components/reports/charts";
 import { StatCard } from "@/components/stat-card";
 import { KanbanBoard } from "@/components/tickets/kanban-board";
 import { QuickTicketForm } from "@/components/tickets/quick-ticket-form";
 import { TicketDialog } from "@/components/tickets/ticket-dialog";
 import { Button } from "@/components/ui/button";
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatDate, formatCOP } from "@/lib/format";
+import { todayCO } from "@/lib/dates";
+import { formatDate, formatCOP, formatShortDate } from "@/lib/format";
 import { getProjectHours, getRunningTimer, getSprint, listSprintTickets } from "@/lib/data/tickets";
+import { sprintBurndown } from "@/lib/reports/burndown";
 import { formatDuration } from "@/lib/time";
 import { sprintValue, ticketValue } from "@/lib/valuation";
 
@@ -48,6 +52,10 @@ async function SprintBoard({ params }: Pick<PageProps<"/projects/[id]/sprints/[s
   const estimated = tickets.reduce((sum, t) => sum + Number(t.estimated_hours ?? 0), 0);
   const logged = tickets.reduce((sum, t) => sum + t.logged_hours, 0);
   const done = tickets.filter((t) => t.status === "done").length;
+  const burndown = sprintBurndown(sprint, tickets, todayCO()).map((p) => ({
+    ...p,
+    label: formatShortDate(p.date).replace(/^\w+,\s*/, ""),
+  }));
 
   return (
     <>
@@ -87,6 +95,34 @@ async function SprintBoard({ params }: Pick<PageProps<"/projects/[id]/sprints/[s
       </div>
       <QuickTicketForm projectId={id} sprintId={sprint.id} />
       <KanbanBoard tickets={tickets} values={values} runningTicketId={running?.ticket.id ?? null} />
+      <Card>
+        <CardHeader>
+          <CardTitle>Avance (burndown)</CardTitle>
+          <CardDescription>
+            Horas estimadas pendientes al final de cada día frente al ritmo ideal.
+          </CardDescription>
+          <CardAction>
+            <Button
+              variant="outline"
+              size="sm"
+              nativeButton={false}
+              render={<a href={`/api/reports/sprint.csv?sprint=${sprint.id}`} download />}
+            >
+              <DownloadIcon data-icon="inline-start" />
+              CSV
+            </Button>
+          </CardAction>
+        </CardHeader>
+        <CardContent>
+          {estimated > 0 ? (
+            <BurndownChart data={burndown} />
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Agrega horas estimadas a los tickets (~3h) para ver el burndown.
+            </p>
+          )}
+        </CardContent>
+      </Card>
     </>
   );
 }

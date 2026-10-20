@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckIcon, EllipsisIcon, PencilIcon, PlusIcon, RefreshCwIcon, Trash2Icon } from "lucide-react";
+import { CheckIcon, DownloadIcon, EllipsisIcon, PencilIcon, PlusIcon, RefreshCwIcon, Trash2Icon } from "lucide-react";
 
 import { regenerateMonthlyPayments } from "@/app/(app)/projects/actions";
 import { deletePayment, markPaymentReceived } from "@/app/(app)/projects/payment-actions";
@@ -59,6 +59,15 @@ export function PaymentsTable({ project, payments, today }: Props) {
             Regenerar pagos mensuales
           </Button>
         )}
+        <Button
+          size="sm"
+          variant="ghost"
+          nativeButton={false}
+          render={<a href={`/api/reports/payments.csv?project=${project.id}&from=2000-01-01&to=2100-12-31`} download />}
+        >
+          <DownloadIcon data-icon="inline-start" />
+          CSV
+        </Button>
       </div>
       {payments.length === 0 ? (
         <p className="text-sm text-muted-foreground">Todavía no hay pagos registrados.</p>

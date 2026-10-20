@@ -57,3 +57,6 @@ const monthFormatter = new Intl.DateTimeFormat("es-CO", { month: "short", year: 
 export function formatMonth(month: YearMonth): string {
   return monthFormatter.format(new Date(`${month}-01T00:00:00Z`)).replace(".", "");
 }
+
+/** Rangos (meses hacia atrás) disponibles en /reports; 6 por defecto. */
+export const REPORT_RANGE_MONTHS = [3, 6, 12] as const;
