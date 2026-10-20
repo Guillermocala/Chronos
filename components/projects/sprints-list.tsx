@@ -1,6 +1,7 @@
 "use client";
 
 import { PencilIcon, PlusIcon, Trash2Icon } from "lucide-react";
+import Link from "next/link";
 
 import { deleteSprint } from "@/app/(app)/projects/sprint-actions";
 import { Badge } from "@/components/ui/badge";
@@ -21,7 +22,15 @@ import { sprintValue } from "@/lib/valuation";
 
 import { SprintDialog } from "./sprint-dialog";
 
-type Props = { project: Project; sprints: Sprint[]; today: ISODate };
+type Props = {
+  project: Project;
+  sprints: Sprint[];
+  today: ISODate;
+  /** Horas estimadas de tickets de alcance por sprint (para el valor en proyectos fijos). */
+  scopeHoursBySprint: Record<string, number>;
+  /** Horas estimadas de alcance de todo el proyecto (base de la tarifa). */
+  scopeEstimated: number;
+};
 
 const VALUE_HINT = {
   override: "manual",
@@ -30,7 +39,7 @@ const VALUE_HINT = {
   pending: "se calcula con los tickets",
 } as const;
 
-export function SprintsList({ project, sprints, today }: Props) {
+export function SprintsList({ project, sprints, today, scopeHoursBySprint, scopeEstimated }: Props) {
   const { pending, run } = useAction();
   const latest = sprints.reduce<Sprint | null>(
     (acc, s) => (!acc || s.end_date > acc.end_date ? s : acc),
@@ -77,14 +86,16 @@ export function SprintsList({ project, sprints, today }: Props) {
           </TableHeader>
           <TableBody>
             {sprints.map((sprint) => {
-              const value = sprintValue(project, sprint);
+              const value = sprintValue(project, sprint, scopeHoursBySprint[sprint.id], scopeEstimated);
               const current =
                 daysBetween(sprint.start_date, today) >= 0 && daysBetween(today, sprint.end_date) >= 0;
               return (
                 <TableRow key={sprint.id}>
                   <TableCell>
                     <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="font-medium">{sprint.name}</span>
+                      <Link href={`/projects/${project.id}/sprints/${sprint.id}`} className="font-medium hover:underline">
+                        {sprint.name}
+                      </Link>
                       {current && <Badge>En curso</Badge>}
                       {sprint.is_support && <Badge variant="secondary">Soporte</Badge>}
                     </div>

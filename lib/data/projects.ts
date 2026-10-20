@@ -55,6 +55,19 @@ export async function getProject(id: string): Promise<ProjectDetail | null> {
   return data;
 }
 
+/** Sprints del proyecto para selects (más recientes primero). */
+export async function listProjectSprintChoices(projectId: string): Promise<{ id: string; name: string }[]> {
+  const { supabase } = await requireUser();
+  const { data, error } = await supabase
+    .from("sprints")
+    .select("id, name")
+    .eq("project_id", projectId)
+    .is("deleted_at", null)
+    .order("start_date", { ascending: false });
+  if (error) throw error;
+  return data;
+}
+
 /** Solo los campos del proyecto (para el formulario de edición). */
 export async function getProjectFields(id: string): Promise<Project | null> {
   const { supabase } = await requireUser();

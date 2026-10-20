@@ -1,10 +1,13 @@
 import { CircleCheckIcon } from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
 
 import { PageHeader } from "@/components/page-header";
 import { StatCard } from "@/components/stat-card";
+import { ProjectBadge } from "@/components/tasks/project-badge";
 import { QuickAddDialog } from "@/components/tasks/quick-add-dialog";
+import { TimerButton } from "@/components/tickets/timer-button";
 import { TaskList } from "@/components/tasks/task-list";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -19,6 +22,7 @@ import { requireUser } from "@/lib/auth";
 import { todayCO } from "@/lib/dates";
 import { listAllPayments, listProjectOptions } from "@/lib/data/projects";
 import { listTodayCandidates } from "@/lib/data/tasks";
+import { getRunningTimer, listTicketsInProgress } from "@/lib/data/tickets";
 import { formatCOP } from "@/lib/format";
 import { groupTodayTasks, TODAY_GROUPS } from "@/lib/tasks/today";
 import { paymentTotals } from "@/lib/valuation";
@@ -45,10 +49,12 @@ async function TodayContent() {
   const today = todayCO();
   const month = today.slice(0, 7);
 
-  const [tasks, projects, payments] = await Promise.all([
+  const [tasks, projects, payments, inProgress, running] = await Promise.all([
     listTodayCandidates(today),
     listProjectOptions(),
     listAllPayments(),
+    listTicketsInProgress(),
+    getRunningTimer(),
   ]);
 
   const groups = groupTodayTasks(tasks, today);
@@ -75,6 +81,28 @@ async function TodayContent() {
         }
         actions={<QuickAddDialog defaultMyDay />}
       />
+
+      {inProgress.length > 0 && (
+        <section className="flex flex-col gap-2" aria-labelledby="group-tickets">
+          <div className="flex items-center gap-2">
+            <h2 id="group-tickets" className="text-sm font-semibold">
+              Tickets en curso
+            </h2>
+            <Badge variant="secondary">{inProgress.length}</Badge>
+          </div>
+          <ul className="flex flex-col">
+            {inProgress.map((t) => (
+              <li key={t.id} className="flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-muted/50">
+                <TimerButton ticketId={t.id} code={t.code} running={running?.ticket.id === t.id} />
+                <Link href={`/tickets/${t.id}`} className="min-w-0 flex-1 truncate text-sm hover:underline">
+                  <span className="font-mono text-xs text-muted-foreground">{t.code}</span> {t.title}
+                </Link>
+                {t.project && <ProjectBadge {...t.project} />}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {pendingCount === 0 ? (
         <Empty className="border">

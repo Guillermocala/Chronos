@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/page-header";
 import { PaymentsTable } from "@/components/projects/payments-table";
 import { ProjectActions } from "@/components/projects/project-actions";
 import { SprintsList } from "@/components/projects/sprints-list";
+import { Backlog } from "@/components/tickets/backlog";
 import { StatCard } from "@/components/stat-card";
 import { QuickAddDialog } from "@/components/tasks/quick-add-dialog";
 import { TaskList } from "@/components/tasks/task-list";
@@ -17,9 +18,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { todayCO } from "@/lib/dates";
 import { getProject, listProjectOptions } from "@/lib/data/projects";
 import { listProjectTasks } from "@/lib/data/tasks";
+import { getProjectHours, getRunningTimer, listProjectTickets } from "@/lib/data/tickets";
 import { formatCOP, formatDate, formatHours } from "@/lib/format";
+import { formatDuration } from "@/lib/time";
 import { BILLING_LABELS, phaseInfo } from "@/lib/projects/labels";
-import { contractValue, estimatedHourlyRate, paymentTotals } from "@/lib/valuation";
+import { contractValue, paymentTotals, projectValuation } from "@/lib/valuation";
 
 export const metadata: Metadata = { title: "Proyecto · Chronos" };
 
@@ -33,10 +36,13 @@ export default function ProjectPage({ params }: PageProps<"/projects/[id]">) {
 
 async function ProjectContent({ params }: Pick<PageProps<"/projects/[id]">, "params">) {
   const { id } = await params;
-  const [project, tasks, projects] = await Promise.all([
+  const [project, tasks, projects, tickets, hours, running] = await Promise.all([
     getProject(id),
     listProjectTasks(id),
     listProjectOptions(),
+    listProjectTickets(id),
+    getProjectHours(id),
+    getRunningTimer(),
   ]);
   if (!project) notFound();
 
@@ -45,8 +51,20 @@ async function ProjectContent({ params }: Pick<PageProps<"/projects/[id]">, "par
   const phase = phaseInfo(project, today);
   const value = contractValue(project);
   const totals = paymentTotals(payments, today);
-  const rate = estimatedHourlyRate(project);
   const remaining = value !== null ? Math.max(0, value - totals.received) : null;
+  // Tarifa real: solo lo cobrado del contrato (los extras se cobran aparte).
+  const receivedContract = payments
+    .filter((p) => p.status === "received" && p.kind !== "extra")
+    .reduce((sum, p) => sum + p.amount_cop, 0);
+  const valuation = projectValuation(project, hours, receivedContract);
+  const scopeHoursBySprint = Object.fromEntries(
+    sprints.map((s) => [
+      s.id,
+      tickets
+        .filter((t) => t.sprint_id === s.id && t.kind === "scope")
+        .reduce((sum, t) => sum + Number(t.estimated_hours ?? 0), 0),
+    ]),
+  );
 
   return (
     <>
@@ -90,6 +108,7 @@ async function ProjectContent({ params }: Pick<PageProps<"/projects/[id]">, "par
       <Tabs defaultValue="summary">
         <TabsList>
           <TabsTrigger value="summary">Resumen</TabsTrigger>
+          <TabsTrigger value="tickets">Tickets ({tickets.length})</TabsTrigger>
           <TabsTrigger value="payments">Pagos ({payments.length})</TabsTrigger>
           <TabsTrigger value="sprints">Sprints ({sprints.length})</TabsTrigger>
           <TabsTrigger value="tasks">Tareas ({tasks.length})</TabsTrigger>
@@ -114,8 +133,33 @@ async function ProjectContent({ params }: Pick<PageProps<"/projects/[id]">, "par
               hint={totals.overdueCount > 0 ? `${totals.overdueCount} pagos` : undefined}
             />
           </div>
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <StatCard
+              label="Tarifa estimada"
+              value={valuation.estimatedRate !== null ? `${formatCOP(valuation.estimatedRate)}/h` : "—"}
+              hint={hours.scope_estimated > 0 ? `según ${formatDuration(hours.scope_estimated)} de tickets` : undefined}
+            />
+            <StatCard
+              label="Tarifa real"
+              value={valuation.realRate !== null ? `${formatCOP(valuation.realRate)}/h` : "—"}
+              hint="cobrado ÷ horas de alcance y soporte"
+            />
+            <StatCard
+              label="Horas registradas"
+              value={formatDuration(valuation.loggedHours)}
+              hint={`alcance ${formatDuration(hours.scope_logged)}${hours.extra_logged > 0 ? ` · extra ${formatDuration(hours.extra_logged)}` : ""}`}
+            />
+            <StatCard
+              label="Soporte absorbido"
+              value={formatDuration(hours.support_logged)}
+              hint={
+                valuation.support.opportunityCostCOP
+                  ? `${formatCOP(valuation.support.opportunityCostCOP)} sin cobrar`
+                  : undefined
+              }
+            />
+          </div>
           <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
-            <SummaryRow label="Tarifa estimada por hora" value={rate !== null ? formatCOP(rate) : "—"} />
             <SummaryRow
               label={project.billing_type === "retainer" ? "Horas por mes" : "Horas estimadas"}
               value={formatHours(
@@ -143,12 +187,29 @@ async function ProjectContent({ params }: Pick<PageProps<"/projects/[id]">, "par
           </dl>
         </TabsContent>
 
+        <TabsContent value="tickets" className="pt-4">
+          <Backlog
+            project={fields}
+            sprints={sprints}
+            tickets={tickets}
+            scopeEstimated={hours.scope_estimated}
+            runningTicketId={running?.ticket.id ?? null}
+            today={today}
+          />
+        </TabsContent>
+
         <TabsContent value="payments" className="pt-4">
           <PaymentsTable project={fields} payments={payments} today={today} />
         </TabsContent>
 
         <TabsContent value="sprints" className="pt-4">
-          <SprintsList project={fields} sprints={sprints} today={today} />
+          <SprintsList
+            project={fields}
+            sprints={sprints}
+            today={today}
+            scopeHoursBySprint={scopeHoursBySprint}
+            scopeEstimated={hours.scope_estimated}
+          />
         </TabsContent>
 
         <TabsContent value="tasks" className="flex flex-col gap-3 pt-4">

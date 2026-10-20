@@ -7,6 +7,7 @@ import {
   EllipsisIcon,
   HourglassIcon,
   PencilIcon,
+  TicketIcon,
   Trash2Icon,
 } from "lucide-react";
 import { useState } from "react";
@@ -17,6 +18,7 @@ import {
   setTaskStatus,
   snoozeTask,
 } from "@/app/(app)/tasks/actions";
+import { convertTaskToTicket } from "@/app/(app)/tickets/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -96,7 +98,11 @@ export function TaskItem({ task, today, projects }: Props) {
             </Badge>
           )}
           {inMyDay && !done && <Badge variant="secondary">Mi día</Badge>}
-          {task.is_ticket_candidate && <Badge variant="outline">Convertir a ticket</Badge>}
+          {task.is_ticket_candidate && (
+            <Badge variant="outline">
+              Convertir a ticket{task.estimated_hours != null && ` · ~${task.estimated_hours} h`}
+            </Badge>
+          )}
           {task.tags.map((tag) => (
             <span key={tag}>#{tag}</span>
           ))}
@@ -127,6 +133,18 @@ export function TaskItem({ task, today, projects }: Props) {
               <ClockIcon />
               Posponer una semana
             </DropdownMenuItem>
+            {task.is_ticket_candidate && !done && (
+              <DropdownMenuItem
+                onClick={() =>
+                  task.project_id
+                    ? run(() => convertTaskToTicket(task.id))
+                    : setEditing(true)
+                }
+              >
+                <TicketIcon />
+                {task.project_id ? "Convertir a ticket" : "Asignar proyecto para convertir"}
+              </DropdownMenuItem>
+            )}
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>

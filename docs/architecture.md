@@ -59,6 +59,19 @@ Chronos es un gestor personal de tickets, sprints y valor en COP por proyecto. L
   - un solo `doc_url` opcional (un Doc o una carpeta de Drive);
   - origen opcional en una nota de reunión.
 - **Valor:** la tarifa estimada sale del monto o la mensualidad entre las horas. La tarifa real incluye las horas de soporte no facturable.
+  - **Tarifa real** = cobrado del contrato (sin pagos extra) ÷ (horas de alcance + soporte), en `projectValuation`.
+  - **Valor por ticket** (`ticketValue`): alcance = horas × tarifa; soporte = 0, con costo de oportunidad; extra facturable = horas × tarifa.
+- **Tickets** (fase 3):
+  - backlog por proyecto (pestaña Tickets);
+  - kanban por sprint en `/projects/[id]/sprints/[sid]`, con dnd-kit: puntero, táctil y teclado, más un selector de estado en el celular;
+  - orden con posiciones fraccionales (`lib/tickets/ordering.ts`);
+  - detalle en `/tickets/[id]`.
+- **Horas:**
+  - cronómetro único por usuario (índice parcial en `time_entries`), visible arriba en todas las pantallas;
+  - registro manual ("1:30", "90m");
+  - las vistas `ticket_hours` y `project_hours` (`security_invoker`) suman las horas.
+- **Extras:** "Cobrar como extra" marca el ticket `extra` facturable y crea un pago `extra` esperado con `payments.ticket_id`; el trigger agrega su seguimiento "Cobrar…".
+- **Tareas candidatas a ticket** (de los dictados) conservan `~Nh` en `tasks.estimated_hours`. "Convertir a ticket" crea el ticket y cierra la tarea.
 - **Granola:**
   - las reglas de dictado viven en un solo lugar, `lib/granola/conventions.ts`:
     - secciones `## Tareas`, `## Seguimientos`, `## Tickets` y `## Notas`;

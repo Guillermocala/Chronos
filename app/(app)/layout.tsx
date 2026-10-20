@@ -3,6 +3,7 @@ import { Suspense } from "react";
 
 import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { TimerChip } from "@/components/tickets/timer-chip";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -14,6 +15,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { requireUser } from "@/lib/auth";
+import { getRunningTimer } from "@/lib/data/tickets";
 
 import { signOut } from "./actions";
 
@@ -43,11 +45,27 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
           <Separator orientation="vertical" className="h-4" />
           <span className="font-semibold">Chronos</span>
         </header>
-        <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-6 sm:px-6">
+        <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-6 sm:px-6">
+          <Suspense fallback={null}>
+            <RunningTimer />
+          </Suspense>
           {children}
         </div>
       </SidebarInset>
     </SidebarProvider>
+  );
+}
+
+async function RunningTimer() {
+  const timer = await getRunningTimer();
+  if (!timer) return null;
+  return (
+    <TimerChip
+      ticketId={timer.ticket.id}
+      code={timer.ticket.code}
+      title={timer.ticket.title}
+      startedAt={timer.started_at}
+    />
   );
 }
 
