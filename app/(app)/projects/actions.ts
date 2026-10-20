@@ -7,7 +7,8 @@ import { z } from "zod";
 import { fail, firstIssue, ok, type ActionResult } from "@/lib/action-result";
 import { requireUser } from "@/lib/auth";
 import { addDays } from "@/lib/dates";
-import { buildMonthlySchedule } from "@/lib/payments";
+import type { Project } from "@/lib/data/projects";
+import { buildMonthlySchedule, planMonthlySync } from "@/lib/payments";
 import { deliverySchema, projectSchema } from "@/lib/projects/schema";
 
 function refresh() {
@@ -28,20 +29,20 @@ export async function createProject(formData: FormData): Promise<ActionResult> {
   if (error) return duplicatePrefix(error, input.code_prefix) ?? fail("No se pudo crear el proyecto.");
 
   // Contratación mensual: se generan los pagos esperados (y sus seguimientos "Cobrar…").
-  if (input.billing_type === "retainer" && input.start_date && input.contract_months) {
-    const schedule = buildMonthlySchedule({
-      start_date: input.start_date,
-      contract_months: input.contract_months,
-      monthly_fee_cop: input.monthly_fee_cop!,
-      billing_day: input.billing_day,
-    }).map((p) => ({ ...p, project_id: project.id }));
-    const { error: scheduleError } = await supabase.from("payments").insert(schedule);
-    if (scheduleError) return fail("El proyecto se creó, pero no se pudieron generar los pagos mensuales.");
-  }
+  const sync = await syncMonthlyPayments(supabase, project.id);
+  if (!sync.ok) return fail("El proyecto se creó, pero no se pudieron generar los pagos mensuales.");
 
   refresh();
   redirect(`/projects/${project.id}`);
 }
+
+const CONTRACT_FIELDS = [
+  "billing_type",
+  "start_date",
+  "contract_months",
+  "monthly_fee_cop",
+  "billing_day",
+] as const;
 
 export async function updateProject(formData: FormData): Promise<ActionResult> {
   const { supabase } = await requireUser();
@@ -50,8 +51,22 @@ export async function updateProject(formData: FormData): Promise<ActionResult> {
   const parsed = projectSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return fail(firstIssue(parsed.error));
 
+  const { data: before, error: readError } = await supabase
+    .from("projects")
+    .select(CONTRACT_FIELDS.join(", "))
+    .eq("id", id.data)
+    .single<Pick<Project, (typeof CONTRACT_FIELDS)[number]>>();
+  if (readError) return fail("No se encontró el proyecto.");
+
   const { error } = await supabase.from("projects").update(parsed.data).eq("id", id.data);
   if (error) return duplicatePrefix(error, parsed.data.code_prefix) ?? fail("No se pudo guardar el proyecto.");
+
+  // Si cambió el contrato, las mensualidades pendientes se recalculan (las recibidas no se tocan).
+  const contractChanged = CONTRACT_FIELDS.some((field) => before[field] !== parsed.data[field]);
+  if (contractChanged && formData.get("sync_payments") === "on") {
+    const sync = await syncMonthlyPayments(supabase, id.data);
+    if (!sync.ok) return fail("El proyecto se guardó, pero no se pudieron recalcular los pagos mensuales.");
+  }
 
   refresh();
   redirect(`/projects/${id.data}`);
@@ -69,17 +84,71 @@ export async function archiveProject(id: string): Promise<ActionResult> {
   redirect("/projects");
 }
 
+type Supabase = Awaited<ReturnType<typeof requireUser>>["supabase"];
+
 /**
- * Rehace los pagos mensuales pendientes según el contrato actual. Los meses que
- * ya tienen una mensualidad recibida se respetan.
+ * Alinea las mensualidades con el contrato actual del proyecto: reemplaza las
+ * pendientes por el calendario vigente y respeta los meses ya cobrados. Si el
+ * proyecto ya no es mensual (o le faltan datos), solo retira las pendientes.
+ * Los seguimientos "Cobrar…" los ajusta el trigger payments_sync_follow_up.
  */
+async function syncMonthlyPayments(
+  supabase: Supabase,
+  projectId: string,
+): Promise<{ ok: true; created: number; replaced: number } | { ok: false }> {
+  const { data: project, error } = await supabase
+    .from("projects")
+    .select("billing_type, start_date, contract_months, monthly_fee_cop, billing_day")
+    .eq("id", projectId)
+    .single();
+  if (error) return { ok: false };
+
+  const { data: existing, error: paymentsError } = await supabase
+    .from("payments")
+    .select("id, status, due_date")
+    .eq("project_id", projectId)
+    .eq("kind", "monthly")
+    .is("deleted_at", null);
+  if (paymentsError) return { ok: false };
+
+  const schedule =
+    project.billing_type === "retainer" &&
+    project.start_date &&
+    project.contract_months &&
+    project.monthly_fee_cop
+      ? buildMonthlySchedule({
+          start_date: project.start_date,
+          contract_months: project.contract_months,
+          monthly_fee_cop: project.monthly_fee_cop,
+          billing_day: project.billing_day,
+        })
+      : [];
+  const { toDelete, toInsert } = planMonthlySync(existing, schedule);
+
+  if (toDelete.length > 0) {
+    const { error: deleteError } = await supabase
+      .from("payments")
+      .update({ deleted_at: new Date().toISOString() })
+      .in("id", toDelete);
+    if (deleteError) return { ok: false };
+  }
+  if (toInsert.length > 0) {
+    const { error: insertError } = await supabase
+      .from("payments")
+      .insert(toInsert.map((p) => ({ ...p, project_id: projectId })));
+    if (insertError) return { ok: false };
+  }
+  return { ok: true, created: toInsert.length, replaced: toDelete.length };
+}
+
+/** Botón "Regenerar pagos mensuales" de la pestaña Pagos. */
 export async function regenerateMonthlyPayments(id: string): Promise<ActionResult> {
   const { supabase } = await requireUser();
   if (!z.uuid().safeParse(id).success) return fail("Proyecto inválido.");
 
   const { data: project, error } = await supabase
     .from("projects")
-    .select("billing_type, start_date, contract_months, monthly_fee_cop, billing_day, payments(kind, status, due_date, deleted_at)")
+    .select("billing_type, start_date, contract_months, monthly_fee_cop")
     .eq("id", id)
     .single();
   if (error) return fail("No se encontró el proyecto.");
@@ -92,37 +161,11 @@ export async function regenerateMonthlyPayments(id: string): Promise<ActionResul
     return fail("Completa inicio, meses y mensualidad del contrato para generar los pagos.");
   }
 
-  const paidMonths = new Set(
-    project.payments
-      .filter((p) => !p.deleted_at && p.kind === "monthly" && p.status === "received" && p.due_date)
-      .map((p) => p.due_date!.slice(0, 7)),
-  );
-
-  const { error: deleteError } = await supabase
-    .from("payments")
-    .update({ deleted_at: new Date().toISOString() })
-    .eq("project_id", id)
-    .eq("kind", "monthly")
-    .eq("status", "expected")
-    .is("deleted_at", null);
-  if (deleteError) return fail("No se pudieron actualizar los pagos.");
-
-  const schedule = buildMonthlySchedule({
-    start_date: project.start_date,
-    contract_months: project.contract_months,
-    monthly_fee_cop: project.monthly_fee_cop,
-    billing_day: project.billing_day,
-  })
-    .filter((p) => !paidMonths.has(p.due_date!.slice(0, 7)))
-    .map((p) => ({ ...p, project_id: id }));
-
-  if (schedule.length > 0) {
-    const { error: insertError } = await supabase.from("payments").insert(schedule);
-    if (insertError) return fail("No se pudieron generar los pagos.");
-  }
+  const sync = await syncMonthlyPayments(supabase, id);
+  if (!sync.ok) return fail("No se pudieron actualizar los pagos.");
 
   refresh();
-  return ok(`Se generaron ${schedule.length} pagos mensuales.`);
+  return ok(`Se generaron ${sync.created} pagos mensuales (${sync.replaced} pendientes reemplazados).`);
 }
 
 /** Marca la entrega: abre la ventana de soporte y, opcionalmente, registra el pago final y el sprint de soporte. */

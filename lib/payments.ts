@@ -1,4 +1,5 @@
 import { daysBetween, makeISODate, type ISODate } from "@/lib/dates";
+import type { Tables } from "@/lib/supabase/database.types";
 import type { TablesInsert } from "@/lib/supabase/database.types";
 
 export type MonthlyScheduleInput = {
@@ -40,4 +41,26 @@ export function buildMonthlySchedule({
       due_date: makeISODate(year + Math.floor(m / 12), (m % 12) + 1, day)!,
     };
   });
+}
+
+export type ExistingMonthlyPayment = Pick<Tables<"payments">, "id" | "status" | "due_date">;
+
+/**
+ * Qué hacer con las mensualidades al (re)calcular el contrato: se reemplazan
+ * todas las pendientes y se respetan los meses que ya tienen una mensualidad
+ * recibida.
+ */
+export function planMonthlySync(
+  existing: ExistingMonthlyPayment[],
+  schedule: ScheduledPayment[],
+): { toDelete: string[]; toInsert: ScheduledPayment[] } {
+  const paidMonths = new Set(
+    existing
+      .filter((p) => p.status === "received" && p.due_date)
+      .map((p) => p.due_date!.slice(0, 7)),
+  );
+  return {
+    toDelete: existing.filter((p) => p.status === "expected").map((p) => p.id),
+    toInsert: schedule.filter((p) => !paidMonths.has(p.due_date!.slice(0, 7))),
+  };
 }

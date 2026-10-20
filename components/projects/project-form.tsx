@@ -4,8 +4,10 @@ import { useState } from "react";
 
 import { createProject, updateProject } from "@/app/(app)/projects/actions";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Field,
+  FieldContent,
   FieldDescription,
   FieldGroup,
   FieldLabel,
@@ -162,6 +164,19 @@ export function ProjectForm({ project }: { project?: Project }) {
                 />
               </Field>
             </div>
+          )}
+
+          {project && (billing === "retainer" || project.billing_type === "retainer") && (
+            <Field orientation="horizontal">
+              <Checkbox id="sync_payments" name="sync_payments" defaultChecked />
+              <FieldContent>
+                <FieldLabel htmlFor="sync_payments">Recalcular pagos mensuales pendientes</FieldLabel>
+                <FieldDescription>
+                  Si cambias inicio, meses, mensualidad, día de cobro o modalidad, los pagos pendientes
+                  se rehacen con los datos nuevos. Los pagos ya recibidos no se modifican.
+                </FieldDescription>
+              </FieldContent>
+            </Field>
           )}
         </FieldGroup>
       </FieldSet>
