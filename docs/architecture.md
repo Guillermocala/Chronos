@@ -42,13 +42,30 @@ Chronos es un gestor personal de tickets, sprints y valor en COP por proyecto. L
   - fases `active` → `delivered`/`support` → `closed`;
   - ventana de soporte de 14 días por defecto;
   - enlace opcional a una carpeta de Drive.
-- **Pagos:** anticipo, parcial, final, mensual o extra. Van independientes de la fase.
+  - `default_sprint_days` (duración de sprint por proyecto) y `billing_day` (día de cobro mensual).
+- **Pagos:** anticipo, parcial, final, mensual o extra. Van independientes de la fase. En contrataciones mensuales con inicio y meses se generan automáticamente (`lib/payments.ts`).
+- **Tareas y seguimientos** (`tasks`), distintas de los tickets:
+  - `todo` (lo hago yo) o `follow_up` (espero algo de alguien: `waiting_on`);
+  - `due_date` es la fecha límite y `planned_on` es "Mi día" (cuándo planeo hacerla);
+  - proyecto opcional: sin proyecto = personal;
+  - enlaces opcionales a ticket, nota, pago y Drive.
+  - **No se usa un proyecto "Mi día":** los proyectos exigen facturación y contaminarían el valor.
+- **Seguimientos automáticos** (triggers en la DB):
+  - cada pago esperado con fecha crea "Cobrar …", que se completa al recibirlo;
+  - entrar en soporte crea "Cerrar soporte · …", que se completa al cerrar el proyecto.
+- **Vista Hoy** (`lib/tasks/today.ts`): Vencido, Mi día, Vence hoy, Seguimientos, Cobros y Soporte por cerrar (≤ 3 días).
 - **Tickets:**
   - `kind` scope/support/extra y `billable`;
   - un solo `doc_url` opcional (un Doc o una carpeta de Drive);
   - origen opcional en una nota de reunión.
 - **Valor:** la tarifa estimada sale del monto o la mensualidad entre las horas. La tarifa real incluye las horas de soporte no facturable.
-- **Granola:** se importa o pega un `.md`, se detectan los action items, se revisan y se convierten en tickets.
+- **Granola:**
+  - las reglas de dictado viven en un solo lugar, `lib/granola/conventions.ts`:
+    - secciones `## Tareas`, `## Seguimientos`, `## Tickets` y `## Notas`;
+    - marcadores `@PREFIJO`, `!fecha`, `#prioridad`, `~3h`, `(esperando: X)` y enlaces de Drive;
+  - el parser está en `lib/granola/parse.ts`; "+ Tarea" acepta los mismos marcadores;
+  - `/guide` tiene las instrucciones para Granola, las plantillas y un probador;
+  - `/import` muestra una vista previa editable, guarda la nota en `meeting_notes` y crea los ítems. Las líneas de Tickets quedan como tareas `is_ticket_candidate` hasta la fase de tickets.
 - **Backups:**
   - semanal (domingo 10 p. m., hora de Colombia) y manual desde la app;
   - incremental por proyecto: los proyectos sin cambios no se reexportan;
