@@ -167,6 +167,13 @@ export type Database = {
             foreignKeyName: "note_action_items_ticket_id_fkey"
             columns: ["ticket_id"]
             isOneToOne: false
+            referencedRelation: "ticket_hours"
+            referencedColumns: ["ticket_id"]
+          },
+          {
+            foreignKeyName: "note_action_items_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
             referencedRelation: "tickets"
             referencedColumns: ["id"]
           },
@@ -184,6 +191,7 @@ export type Database = {
           paid_at: string | null
           project_id: string
           status: Database["public"]["Enums"]["payment_status"]
+          ticket_id: string | null
           updated_at: string
           user_id: string
         }
@@ -198,6 +206,7 @@ export type Database = {
           paid_at?: string | null
           project_id: string
           status?: Database["public"]["Enums"]["payment_status"]
+          ticket_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -212,6 +221,7 @@ export type Database = {
           paid_at?: string | null
           project_id?: string
           status?: Database["public"]["Enums"]["payment_status"]
+          ticket_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -221,6 +231,20 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "ticket_hours"
+            referencedColumns: ["ticket_id"]
+          },
+          {
+            foreignKeyName: "payments_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
             referencedColumns: ["id"]
           },
         ]
@@ -461,6 +485,13 @@ export type Database = {
             foreignKeyName: "tasks_ticket_id_fkey"
             columns: ["ticket_id"]
             isOneToOne: false
+            referencedRelation: "ticket_hours"
+            referencedColumns: ["ticket_id"]
+          },
+          {
+            foreignKeyName: "tasks_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
             referencedRelation: "tickets"
             referencedColumns: ["id"]
           },
@@ -608,6 +639,13 @@ export type Database = {
             foreignKeyName: "time_entries_ticket_id_fkey"
             columns: ["ticket_id"]
             isOneToOne: false
+            referencedRelation: "ticket_hours"
+            referencedColumns: ["ticket_id"]
+          },
+          {
+            foreignKeyName: "time_entries_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
             referencedRelation: "tickets"
             referencedColumns: ["id"]
           },
@@ -615,7 +653,42 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      project_hours: {
+        Row: {
+          done_tickets: number | null
+          extra_logged: number | null
+          open_tickets: number | null
+          project_id: string | null
+          scope_estimated: number | null
+          scope_logged: number | null
+          support_logged: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tickets_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_hours: {
+        Row: {
+          logged_hours: number | null
+          project_id: string | null
+          ticket_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tickets_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       ping: { Args: never; Returns: string }
