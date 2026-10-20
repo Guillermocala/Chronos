@@ -42,10 +42,18 @@ En Windows (PowerShell, una sola vez; reiniciar VS Code después):
 
 ## 4. Skills de Claude Code
 Están en `.claude/skills/` y versionadas en `skills-lock.json`:
-- `supabase`: esquemas, migraciones, RLS, Auth
+- `supabase`: Auth, clientes SSR, Data API y seguridad de Supabase
+- `supabase-postgres-best-practices`: tablas, migraciones, RLS, índices, triggers y funciones
 - `vercel-react-best-practices`: rendimiento en React/Next.js
 - `vercel-composition-patterns`: patrones de componentes
 - `web-design-guidelines`: revisión de UI y accesibilidad
+- `shadcn` (oficial de shadcn/ui): agregar, componer y personalizar componentes
+- `vitest` (de antfu, que mantiene Vitest): tests unitarios, mocks y configuración
+
+Para Next.js 16 no hace falta skill: la documentación de la versión instalada está en `node_modules/next/dist/docs/` (ver `AGENTS.md`).
+Opcional: `vercel/next.js@next-dev-loop` verifica la app en ejecución, pero requiere `npm i -g agent-browser`.
+
+**Regla:** al incorporar una tecnología nueva, buscar su skill oficial con `npx skills find <tecnología>`, revisar su contenido y agregarla con `--agent claude-code`.
 
 Para actualizarlas: `npx skills update`.
 
