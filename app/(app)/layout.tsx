@@ -2,6 +2,7 @@ import { LogOutIcon } from "lucide-react";
 import { Suspense } from "react";
 
 import { AppSidebar } from "@/components/app-sidebar";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -24,9 +25,16 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
     <SidebarProvider>
       <AppSidebar
         footer={
-          <Suspense fallback={<Skeleton className="h-10 w-full" />}>
-            <UserMenu />
-          </Suspense>
+          <>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <ThemeToggle variant="sidebar" />
+              </SidebarMenuItem>
+            </SidebarMenu>
+            <Suspense fallback={<Skeleton className="h-10 w-full" />}>
+              <UserMenu />
+            </Suspense>
+          </>
         }
       />
       <SidebarInset>
