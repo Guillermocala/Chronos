@@ -4,9 +4,11 @@ import {
   contractValue,
   estimatedHourlyRate,
   paymentTotals,
+  projectValuation,
   realHourlyRate,
   sprintValue,
   supportImpact,
+  ticketValue,
   type ProjectBilling,
 } from "./valuation";
 
@@ -111,5 +113,47 @@ describe("tarifa real y soporte", () => {
   it("costo de oportunidad del soporte", () => {
     expect(supportImpact(10, 50_000)).toEqual({ hours: 10, opportunityCostCOP: 500_000 });
     expect(supportImpact(10, null)).toEqual({ hours: 10, opportunityCostCOP: null });
+  });
+});
+
+describe("valor por ticket", () => {
+  it("alcance: horas × tarifa; soporte: 0 con costo de oportunidad; extra según facturable", () => {
+    // tarifa con 20 h de alcance: 5.000.000 / 20 = 250.000
+    expect(ticketValue(fixed, { kind: "scope", billable: true, estimated_hours: 4 }, 20)).toEqual({
+      value: 1_000_000,
+      opportunityCost: null,
+    });
+    expect(ticketValue(fixed, { kind: "support", billable: false, estimated_hours: 2 }, 20)).toEqual({
+      value: 0,
+      opportunityCost: 500_000,
+    });
+    expect(ticketValue(fixed, { kind: "extra", billable: true, estimated_hours: 2 }, 20).value).toBe(500_000);
+    expect(ticketValue(fixed, { kind: "extra", billable: false, estimated_hours: 2 }, 20).value).toBe(0);
+  });
+
+  it("sin horas estimadas no hay valor", () => {
+    expect(ticketValue(fixed, { kind: "scope", billable: true, estimated_hours: null }, 20).value).toBeNull();
+  });
+});
+
+describe("projectValuation", () => {
+  const hours = { scope_estimated: 100, scope_logged: 100, support_logged: 0, extra_logged: 0 };
+
+  it("sin soporte, la tarifa real coincide con la estimada", () => {
+    const v = projectValuation(fixed, hours, 5_000_000);
+    expect(v.estimatedRate).toBe(50_000);
+    expect(v.realRate).toBe(50_000);
+  });
+
+  it("el soporte no cobrado baja la tarifa real y se cuantifica", () => {
+    const v = projectValuation(fixed, { ...hours, support_logged: 25 }, 5_000_000);
+    expect(v.realRate).toBe(40_000);
+    expect(v.support).toEqual({ hours: 25, opportunityCostCOP: 1_250_000 });
+  });
+
+  it("los extras no alteran la tarifa real", () => {
+    const v = projectValuation(fixed, { ...hours, extra_logged: 10 }, 5_000_000);
+    expect(v.realRate).toBe(50_000);
+    expect(v.loggedHours).toBe(110);
   });
 });

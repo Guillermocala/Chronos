@@ -124,3 +124,64 @@ export function supportImpact(supportHours: number, estimatedRate: number | null
     opportunityCostCOP: estimatedRate == null ? null : Math.round(supportHours * estimatedRate),
   };
 }
+
+export type TicketLike = Pick<Tables<"tickets">, "kind" | "billable" | "estimated_hours">;
+
+export type TicketValue = {
+  /** Valor que aporta al contrato (soporte = 0). */
+  value: number | null;
+  /** Solo soporte: lo que costarían esas horas a la tarifa estimada. */
+  opportunityCost: number | null;
+};
+
+/**
+ * Valor de un ticket a partir de sus horas estimadas y la tarifa estimada.
+ * - alcance: horas × tarifa.
+ * - soporte: 0 (no se cobra); el costo de oportunidad va aparte.
+ * - extra: horas × tarifa si es facturable (sugerencia de cobro), si no 0.
+ */
+export function ticketValue(
+  project: ProjectBilling,
+  ticket: TicketLike,
+  scopeEstimatedHours?: number | null,
+): TicketValue {
+  const rate = estimatedHourlyRate(project, scopeEstimatedHours);
+  const hours = ticket.estimated_hours;
+  const priced = rate !== null && hours != null ? Math.round(rate * hours) : null;
+
+  switch (ticket.kind) {
+    case "scope":
+      return { value: priced, opportunityCost: null };
+    case "support":
+      return { value: 0, opportunityCost: priced };
+    case "extra":
+      return { value: ticket.billable ? priced : 0, opportunityCost: null };
+  }
+}
+
+export type ProjectHours = {
+  scope_estimated: number;
+  scope_logged: number;
+  support_logged: number;
+  extra_logged: number;
+};
+
+/**
+ * Tarifa estimada vs real del alcance contratado.
+ * La real = cobrado del contrato / (horas de alcance + soporte): el soporte no
+ * cobrado la baja. Los extras se cobran aparte, así que ni sus horas ni sus
+ * pagos entran (`receivedContractCOP` debe excluir pagos extra).
+ */
+export function projectValuation(
+  project: ProjectBilling,
+  hours: ProjectHours,
+  receivedContractCOP: number,
+) {
+  const estimatedRate = estimatedHourlyRate(project, hours.scope_estimated);
+  return {
+    estimatedRate,
+    realRate: realHourlyRate(receivedContractCOP, hours.scope_logged + hours.support_logged),
+    support: supportImpact(hours.support_logged, estimatedRate),
+    loggedHours: hours.scope_logged + hours.support_logged + hours.extra_logged,
+  };
+}
