@@ -227,12 +227,14 @@ export type Database = {
       }
       projects: {
         Row: {
+          billing_day: number | null
           billing_type: Database["public"]["Enums"]["billing_type"]
           client: string | null
           code_prefix: string
           color: string | null
           contract_months: number | null
           created_at: string
+          default_sprint_days: number
           deleted_at: string | null
           delivered_at: string | null
           drive_folder_url: string | null
@@ -251,12 +253,14 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          billing_day?: number | null
           billing_type: Database["public"]["Enums"]["billing_type"]
           client?: string | null
           code_prefix: string
           color?: string | null
           contract_months?: number | null
           created_at?: string
+          default_sprint_days?: number
           deleted_at?: string | null
           delivered_at?: string | null
           drive_folder_url?: string | null
@@ -275,12 +279,14 @@ export type Database = {
           user_id?: string
         }
         Update: {
+          billing_day?: number | null
           billing_type?: Database["public"]["Enums"]["billing_type"]
           client?: string | null
           code_prefix?: string
           color?: string | null
           contract_months?: number | null
           created_at?: string
+          default_sprint_days?: number
           deleted_at?: string | null
           delivered_at?: string | null
           drive_folder_url?: string | null
@@ -349,6 +355,113 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tasks: {
+        Row: {
+          auto_source: Database["public"]["Enums"]["task_auto_source"] | null
+          completed_at: string | null
+          created_at: string
+          deleted_at: string | null
+          doc_kind: Database["public"]["Enums"]["doc_kind"] | null
+          doc_url: string | null
+          due_date: string | null
+          id: string
+          is_ticket_candidate: boolean
+          kind: Database["public"]["Enums"]["task_kind"]
+          notes: string | null
+          payment_id: string | null
+          planned_on: string | null
+          priority: number
+          project_id: string | null
+          source_note_id: string | null
+          status: Database["public"]["Enums"]["task_status"]
+          tags: string[]
+          ticket_id: string | null
+          title: string
+          updated_at: string
+          user_id: string
+          waiting_on: string | null
+        }
+        Insert: {
+          auto_source?: Database["public"]["Enums"]["task_auto_source"] | null
+          completed_at?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          doc_kind?: Database["public"]["Enums"]["doc_kind"] | null
+          doc_url?: string | null
+          due_date?: string | null
+          id?: string
+          is_ticket_candidate?: boolean
+          kind?: Database["public"]["Enums"]["task_kind"]
+          notes?: string | null
+          payment_id?: string | null
+          planned_on?: string | null
+          priority?: number
+          project_id?: string | null
+          source_note_id?: string | null
+          status?: Database["public"]["Enums"]["task_status"]
+          tags?: string[]
+          ticket_id?: string | null
+          title: string
+          updated_at?: string
+          user_id?: string
+          waiting_on?: string | null
+        }
+        Update: {
+          auto_source?: Database["public"]["Enums"]["task_auto_source"] | null
+          completed_at?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          doc_kind?: Database["public"]["Enums"]["doc_kind"] | null
+          doc_url?: string | null
+          due_date?: string | null
+          id?: string
+          is_ticket_candidate?: boolean
+          kind?: Database["public"]["Enums"]["task_kind"]
+          notes?: string | null
+          payment_id?: string | null
+          planned_on?: string | null
+          priority?: number
+          project_id?: string | null
+          source_note_id?: string | null
+          status?: Database["public"]["Enums"]["task_status"]
+          tags?: string[]
+          ticket_id?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+          waiting_on?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_source_note_id_fkey"
+            columns: ["source_note_id"]
+            isOneToOne: false
+            referencedRelation: "meeting_notes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
             referencedColumns: ["id"]
           },
         ]
@@ -518,6 +631,9 @@ export type Database = {
       payment_kind: "advance" | "partial" | "final" | "monthly" | "extra"
       payment_status: "expected" | "received"
       project_phase: "active" | "delivered" | "support" | "closed"
+      task_auto_source: "delivery" | "payment"
+      task_kind: "todo" | "follow_up"
+      task_status: "open" | "waiting" | "done" | "dismissed"
       ticket_kind: "scope" | "support" | "extra"
       ticket_status: "backlog" | "todo" | "in_progress" | "review" | "done"
     }
@@ -657,6 +773,9 @@ export const Constants = {
       payment_kind: ["advance", "partial", "final", "monthly", "extra"],
       payment_status: ["expected", "received"],
       project_phase: ["active", "delivered", "support", "closed"],
+      task_auto_source: ["delivery", "payment"],
+      task_kind: ["todo", "follow_up"],
+      task_status: ["open", "waiting", "done", "dismissed"],
       ticket_kind: ["scope", "support", "extra"],
       ticket_status: ["backlog", "todo", "in_progress", "review", "done"],
     },
