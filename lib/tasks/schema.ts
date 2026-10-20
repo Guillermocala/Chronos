@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { isISODate } from "@/lib/dates";
-import { parseDriveUrl } from "@/lib/drive";
+import { parseDriveUrl, type DocKind } from "@/lib/drive";
 
 const emptyToNull = (v: unknown) =>
   v === undefined || (typeof v === "string" && v.trim() === "") ? null : v;
@@ -24,7 +24,7 @@ export const driveLink = z.preprocess(
   z
     .string()
     .nullable()
-    .transform((value, ctx) => {
+    .transform((value, ctx): { doc_url: string | null; doc_kind: DocKind | null } => {
       if (value === null) return { doc_url: null, doc_kind: null };
       const parsed = parseDriveUrl(value);
       if (!parsed) {

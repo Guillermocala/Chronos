@@ -4,6 +4,7 @@ import { Suspense } from "react";
 
 import { PageHeader } from "@/components/page-header";
 import { QuickAddDialog } from "@/components/tasks/quick-add-dialog";
+import { RecurringList } from "@/components/tasks/recurring-list";
 import { TaskFilters } from "@/components/tasks/task-filters";
 import { TaskList } from "@/components/tasks/task-list";
 import {
@@ -17,6 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { requireUser } from "@/lib/auth";
 import { todayCO } from "@/lib/dates";
 import { listProjectOptions } from "@/lib/data/projects";
+import { listRecurring } from "@/lib/data/recurring";
 import { listTasks, TASK_VIEWS, type TaskView } from "@/lib/data/tasks";
 
 export const metadata: Metadata = { title: "Tareas · Chronos" };
@@ -26,6 +28,7 @@ const EMPTY_TEXT: Record<TaskView, string> = {
   waiting: "No estás esperando nada de nadie.",
   inbox: "La bandeja está vacía: todo tiene fecha.",
   done: "Todavía no hay tareas completadas.",
+  recurring: "Sin tareas recurrentes.",
 };
 
 export default function TasksPage({ searchParams }: PageProps<"/tasks">) {
@@ -58,15 +61,24 @@ async function TasksContent({ searchParams }: Pick<PageProps<"/tasks">, "searchP
   const tag = param(params.tag) || undefined;
   const today = todayCO();
 
-  const [tasks, projects] = await Promise.all([
+  const [tasks, projects, recurring] = await Promise.all([
     listTasks({ view, project, tag }, today),
     listProjectOptions({ includeClosed: true }),
+    view === "recurring" ? listRecurring() : Promise.resolve([]),
   ]);
 
   return (
     <div className="flex flex-col gap-4">
       <TaskFilters view={view} project={project} tag={tag} projects={projects} />
-      {tasks.length === 0 ? (
+      {view === "recurring" ? (
+        <RecurringList
+          items={recurring.filter(
+            (r) => !project || (project === "personal" ? r.project_id === null : r.project_id === project),
+          )}
+          projects={projects}
+          today={today}
+        />
+      ) : tasks.length === 0 ? (
         <Empty className="border">
           <EmptyHeader>
             <EmptyMedia variant="icon">

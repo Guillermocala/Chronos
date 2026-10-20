@@ -104,6 +104,11 @@ export function TaskItem({ task, today, projects }: Props) {
               Convertir a ticket{task.estimated_hours != null && ` · ~${task.estimated_hours} h`}
             </Badge>
           )}
+          {task.recurring_task_id && (
+            <Link href="/tasks?view=recurring" className="hover:underline" title="Tarea recurrente">
+              ↻ Recurrente
+            </Link>
+          )}
           {task.source_note_id && (
             <Link href={`/notes/${task.source_note_id}`} className="hover:underline">
               Ver nota

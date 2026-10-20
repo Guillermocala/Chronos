@@ -66,6 +66,9 @@ export async function listTasks(filters: TaskFilters, today: ISODate): Promise<T
     case "done":
       query = query.eq("status", "done").order("completed_at", { ascending: false }).limit(50);
       break;
+    case "recurring":
+      // Las reglas recurrentes se listan aparte (lib/data/recurring.ts).
+      return [];
   }
 
   if (filters.project === "personal") query = query.is("project_id", null);

@@ -13,6 +13,7 @@ const TABLES = [
   "tasks",
   "meeting_notes",
   "note_action_items",
+  "recurring_tasks",
 ] as const;
 
 export async function GET() {
