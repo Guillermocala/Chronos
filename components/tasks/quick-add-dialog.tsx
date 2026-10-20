@@ -25,11 +25,13 @@ type Props = {
   /** Proyecto por defecto (desde el detalle de un proyecto). */
   projectId?: string;
   defaultMyDay?: boolean;
+  /** Abrir al cargar (atajo "Nueva tarea" de la app instalada: /today?add=1). */
+  defaultOpen?: boolean;
   variant?: "sidebar" | "button";
 };
 
-export function QuickAddDialog({ projectId, defaultMyDay = false, variant = "button" }: Props) {
-  const [open, setOpen] = useState(false);
+export function QuickAddDialog({ projectId, defaultMyDay = false, defaultOpen = false, variant = "button" }: Props) {
+  const [open, setOpen] = useState(defaultOpen);
   const { pending, run } = useAction();
 
   const trigger =

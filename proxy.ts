@@ -10,7 +10,8 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Todo excepto estáticos, imágenes y el endpoint de cron (usa su propio secreto).
-    "/((?!_next/static|_next/image|favicon.ico|api/health|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    // Todo excepto estáticos, imágenes, el endpoint de cron (usa su propio secreto)
+    // y lo público de la PWA (manifest, service worker, íconos y página sin conexión).
+    "/((?!_next/static|_next/image|favicon.ico|api/health|manifest.webmanifest|sw.js|icons/|icon|apple-icon|offline|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };

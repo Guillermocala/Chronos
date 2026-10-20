@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
+import { RegisterServiceWorker } from "@/components/pwa/register-sw";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/toast";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -20,6 +21,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Chronos",
   description: "Gestor personal de tickets, sprints y valor por proyecto",
+  applicationName: "Chronos",
+  // iPhone: al agregarla a inicio abre sin barra de Safari.
+  appleWebApp: { capable: true, title: "Chronos", statusBarStyle: "default" },
 };
 
 // Color de la barra del navegador en el celular según el tema del sistema.
@@ -49,6 +53,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <TooltipProvider>{children}</TooltipProvider>
           </Toaster>
         </ThemeProvider>
+        <RegisterServiceWorker />
       </body>
     </html>
   );

@@ -29,10 +29,10 @@ import { paymentTotals } from "@/lib/valuation";
 
 export const metadata: Metadata = { title: "Hoy · Chronos" };
 
-export default function TodayPage() {
+export default function TodayPage({ searchParams }: PageProps<"/today">) {
   return (
     <Suspense fallback={<TodaySkeleton />}>
-      <TodayContent />
+      <TodayContent searchParams={searchParams} />
     </Suspense>
   );
 }
@@ -44,7 +44,7 @@ const longDate = new Intl.DateTimeFormat("es-CO", {
   timeZone: "America/Bogota",
 });
 
-async function TodayContent() {
+async function TodayContent({ searchParams }: Pick<PageProps<"/today">, "searchParams">) {
   await requireUser();
   const today = todayCO();
   const month = today.slice(0, 7);
@@ -79,7 +79,7 @@ async function TodayContent() {
             {dateLabel} · {pendingCount === 0 ? "sin pendientes" : `${pendingCount} pendientes`}
           </span>
         }
-        actions={<QuickAddDialog defaultMyDay />}
+        actions={<QuickAddDialog defaultMyDay defaultOpen={(await searchParams).add === "1"} />}
       />
 
       {inProgress.length > 0 && (
