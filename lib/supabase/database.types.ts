@@ -113,6 +113,13 @@ export type Database = {
             foreignKeyName: "meeting_notes_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
+            referencedRelation: "project_last_change"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "meeting_notes_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
             referencedRelation: "projects"
             referencedColumns: ["id"]
           },
@@ -226,6 +233,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "payments_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_last_change"
+            referencedColumns: ["project_id"]
+          },
           {
             foreignKeyName: "payments_project_id_fkey"
             columns: ["project_id"]
@@ -378,6 +392,13 @@ export type Database = {
             foreignKeyName: "sprints_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
+            referencedRelation: "project_last_change"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "sprints_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
             referencedRelation: "projects"
             referencedColumns: ["id"]
           },
@@ -469,6 +490,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "payments"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_last_change"
+            referencedColumns: ["project_id"]
           },
           {
             foreignKeyName: "tasks_project_id_fkey"
@@ -581,6 +609,13 @@ export type Database = {
             foreignKeyName: "tickets_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
+            referencedRelation: "project_last_change"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "tickets_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
             referencedRelation: "projects"
             referencedColumns: ["id"]
           },
@@ -671,10 +706,47 @@ export type Database = {
             foreignKeyName: "tickets_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
+            referencedRelation: "project_last_change"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "tickets_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
             referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
+      }
+      project_last_change: {
+        Row: {
+          code_prefix: string | null
+          deleted_at: string | null
+          last_change_at: string | null
+          name: string | null
+          phase: Database["public"]["Enums"]["project_phase"] | null
+          project_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          code_prefix?: string | null
+          deleted_at?: string | null
+          last_change_at?: never
+          name?: string | null
+          phase?: Database["public"]["Enums"]["project_phase"] | null
+          project_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          code_prefix?: string | null
+          deleted_at?: string | null
+          last_change_at?: never
+          name?: string | null
+          phase?: Database["public"]["Enums"]["project_phase"] | null
+          project_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
       ticket_hours: {
         Row: {
@@ -683,6 +755,13 @@ export type Database = {
           ticket_id: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "tickets_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_last_change"
+            referencedColumns: ["project_id"]
+          },
           {
             foreignKeyName: "tickets_project_id_fkey"
             columns: ["project_id"]
