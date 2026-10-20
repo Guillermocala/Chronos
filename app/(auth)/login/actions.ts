@@ -33,5 +33,5 @@ export async function login(
     return { error: INVALID };
   }
 
-  redirect("/dashboard");
+  redirect("/today");
 }

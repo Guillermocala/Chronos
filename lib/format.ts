@@ -1,4 +1,4 @@
-import type { ISODate } from "@/lib/dates";
+import { daysBetween, type ISODate } from "@/lib/dates";
 
 const copFormatter = new Intl.NumberFormat("es-CO", {
   style: "currency",
@@ -47,7 +47,18 @@ export function formatShortDate(iso: ISODate | null | undefined): string {
   return iso ? shortDateFormatter.format(isoToDate(iso)) : "—";
 }
 
-const hoursFormatter = new Intl.NumberFormat("es-CO", { maximumFractionDigits: 2 });
+/** "Hoy", "Mañana", "Ayer", "En 3 días", "Hace 5 días"; más de una semana → fecha corta. */
+export function relativeDay(iso: ISODate, today: ISODate): string {
+  const diff = daysBetween(today, iso);
+  if (diff === 0) return "Hoy";
+  if (diff === 1) return "Mañana";
+  if (diff === -1) return "Ayer";
+  if (diff > 1 && diff <= 7) return `En ${diff} días`;
+  if (diff < -1 && diff >= -7) return `Hace ${-diff} días`;
+  return formatShortDate(iso);
+}
+
+const hoursFormatter =new Intl.NumberFormat("es-CO", { maximumFractionDigits: 2 });
 
 export function formatHours(hours: number | null | undefined): string {
   return hours == null ? "—" : `${hoursFormatter.format(hours)} h`;

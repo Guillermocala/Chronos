@@ -1,28 +1,45 @@
-import Link from "next/link";
+import { LogOutIcon } from "lucide-react";
 import { Suspense } from "react";
 
-import { Button } from "@/components/ui/button";
+import { AppSidebar } from "@/components/app-sidebar";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
 import { requireUser } from "@/lib/auth";
 
 import { signOut } from "./actions";
 
-// Con Cache Components la sesión se lee detrás de <Suspense>: el header estático
-// se prerenderiza y la parte que depende del usuario se transmite por streaming.
-// Cada página/componente que lee datos vuelve a llamar requireUser() (el proxy
-// solo hace el chequeo optimista).
+// Con Cache Components la sesión se lee detrás de <Suspense>: el shell estático
+// se prerenderiza y lo que depende del usuario llega por streaming. Cada página y
+// Server Action vuelve a llamar requireUser() (el proxy solo hace el chequeo optimista).
 export default function AppLayout({ children }: LayoutProps<"/">) {
   return (
-    <div className="flex min-h-full flex-1 flex-col">
-      <header className="flex items-center justify-between border-b px-4 py-3 sm:px-6">
-        <Link href="/dashboard" className="text-lg font-semibold tracking-tight">
-          Chronos
-        </Link>
-        <Suspense fallback={<div className="h-8" />}>
-          <UserMenu />
-        </Suspense>
-      </header>
-      <main className="flex flex-1 flex-col px-4 py-6 sm:px-6">{children}</main>
-    </div>
+    <SidebarProvider>
+      <AppSidebar
+        footer={
+          <Suspense fallback={<Skeleton className="h-10 w-full" />}>
+            <UserMenu />
+          </Suspense>
+        }
+      />
+      <SidebarInset>
+        <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4 md:hidden">
+          <SidebarTrigger />
+          <Separator orientation="vertical" className="h-4" />
+          <span className="font-semibold">Chronos</span>
+        </header>
+        <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-6 sm:px-6">
+          {children}
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
 
@@ -30,15 +47,18 @@ async function UserMenu() {
   const { email } = await requireUser();
 
   return (
-    <div className="flex items-center gap-3">
-      <span className="hidden text-sm text-muted-foreground sm:inline">
-        {email}
-      </span>
-      <form action={signOut}>
-        <Button type="submit" variant="outline" size="sm">
-          Cerrar sesión
-        </Button>
-      </form>
-    </div>
+    <SidebarMenu>
+      <SidebarMenuItem>
+        <form action={signOut}>
+          <SidebarMenuButton type="submit" tooltip="Cerrar sesión">
+            <LogOutIcon />
+            <span className="flex min-w-0 flex-col text-left">
+              <span className="truncate text-xs text-muted-foreground">{email}</span>
+              <span>Cerrar sesión</span>
+            </span>
+          </SidebarMenuButton>
+        </form>
+      </SidebarMenuItem>
+    </SidebarMenu>
   );
 }

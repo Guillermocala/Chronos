@@ -1,0 +1,123 @@
+"use client";
+
+import {
+  BookOpenIcon,
+  ChartColumnIcon,
+  FolderKanbanIcon,
+  ImportIcon,
+  ListTodoIcon,
+  SettingsIcon,
+  SunIcon,
+  type LucideIcon,
+} from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import type { ReactNode } from "react";
+
+import { QuickAddDialog } from "@/components/tasks/quick-add-dialog";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuBadge,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  useSidebar,
+} from "@/components/ui/sidebar";
+
+type NavItem = { href: string; label: string; icon: LucideIcon; soon?: boolean };
+
+const NAV: { label: string; items: NavItem[] }[] = [
+  {
+    label: "Pendientes",
+    items: [
+      { href: "/today", label: "Hoy", icon: SunIcon },
+      { href: "/tasks", label: "Tareas", icon: ListTodoIcon },
+    ],
+  },
+  {
+    label: "Trabajo",
+    items: [
+      { href: "/projects", label: "Proyectos", icon: FolderKanbanIcon },
+      { href: "/reports", label: "Reportes", icon: ChartColumnIcon, soon: true },
+    ],
+  },
+  {
+    label: "Granola",
+    items: [
+      { href: "/import", label: "Importar dictado", icon: ImportIcon },
+      { href: "/guide", label: "Guía de dictado", icon: BookOpenIcon },
+    ],
+  },
+  {
+    label: "Sistema",
+    items: [{ href: "/settings", label: "Ajustes", icon: SettingsIcon, soon: true }],
+  },
+];
+
+export function AppSidebar({ footer }: { footer: ReactNode }) {
+  const pathname = usePathname();
+  const { setOpenMobile } = useSidebar();
+
+  return (
+    <Sidebar collapsible="icon">
+      <SidebarHeader>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              size="lg"
+              render={<Link href="/today" onClick={() => setOpenMobile(false)} />}
+            >
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary font-semibold text-primary-foreground">
+                C
+              </span>
+              <span className="truncate font-semibold">Chronos</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <QuickAddDialog variant="sidebar" />
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarHeader>
+      <SidebarContent>
+        {NAV.map((group) => (
+          <SidebarGroup key={group.label}>
+            <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {group.items.map((item) => (
+                  <SidebarMenuItem key={item.href}>
+                    {item.soon ? (
+                      <>
+                        <SidebarMenuButton disabled tooltip={`${item.label} (próximamente)`}>
+                          <item.icon />
+                          <span>{item.label}</span>
+                        </SidebarMenuButton>
+                        <SidebarMenuBadge>Pronto</SidebarMenuBadge>
+                      </>
+                    ) : (
+                      <SidebarMenuButton
+                        isActive={pathname.startsWith(item.href)}
+                        tooltip={item.label}
+                        render={<Link href={item.href} onClick={() => setOpenMobile(false)} />}
+                      >
+                        <item.icon />
+                        <span>{item.label}</span>
+                      </SidebarMenuButton>
+                    )}
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
+      </SidebarContent>
+      <SidebarFooter>{footer}</SidebarFooter>
+    </Sidebar>
+  );
+}

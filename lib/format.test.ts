@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatCOP, formatDate, formatHours, parseCOP } from "./format";
+import { formatCOP, formatDate, formatHours, parseCOP, relativeDay } from "./format";
 
 // Intl usa espacios no separables; se normalizan para comparar.
 const plain = (s: string) => s.replace(/\s/g, " ");
@@ -31,6 +31,20 @@ describe("COP", () => {
 describe("fechas y horas", () => {
   it("formatea fechas en español sin desfase de zona horaria", () => {
     expect(plain(formatDate("2026-10-01"))).toMatch(/^1 .*oct.* 2026$/);
+  });
+
+  it.each([
+    ["2026-10-20", "Hoy"],
+    ["2026-10-21", "Mañana"],
+    ["2026-10-19", "Ayer"],
+    ["2026-10-23", "En 3 días"],
+    ["2026-10-15", "Hace 5 días"],
+  ])("relativeDay(%s) → %s", (iso, expected) => {
+    expect(relativeDay(iso, "2026-10-20")).toBe(expected);
+  });
+
+  it("relativeDay usa fecha corta a más de una semana", () => {
+    expect(plain(relativeDay("2026-11-30", "2026-10-20"))).toMatch(/30/);
   });
 
   it("formatea horas", () => {

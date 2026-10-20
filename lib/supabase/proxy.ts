@@ -71,7 +71,7 @@ export async function updateSession(request: NextRequest) {
   }
 
   if (claims && isPublic) {
-    return redirectWithSession(request, supabaseResponse, "/dashboard");
+    return redirectWithSession(request, supabaseResponse, "/today");
   }
 
   return supabaseResponse;
