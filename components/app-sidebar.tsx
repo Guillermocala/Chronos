@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 
 import { QuickAddDialog } from "@/components/tasks/quick-add-dialog";
 import {
@@ -30,7 +30,12 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
-type NavItem = { href: string; label: string; icon: LucideIcon; soon?: boolean };
+type NavItem = {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  soon?: boolean;
+};
 
 const NAV: { label: string; items: NavItem[] }[] = [
   {
@@ -44,7 +49,12 @@ const NAV: { label: string; items: NavItem[] }[] = [
     label: "Trabajo",
     items: [
       { href: "/projects", label: "Proyectos", icon: FolderKanbanIcon },
-      { href: "/reports", label: "Reportes", icon: ChartColumnIcon, soon: true },
+      {
+        href: "/reports",
+        label: "Reportes",
+        icon: ChartColumnIcon,
+        soon: true,
+      },
     ],
   },
   {
@@ -56,12 +66,13 @@ const NAV: { label: string; items: NavItem[] }[] = [
   },
   {
     label: "Sistema",
-    items: [{ href: "/settings", label: "Ajustes", icon: SettingsIcon, soon: true }],
+    items: [
+      { href: "/settings", label: "Ajustes", icon: SettingsIcon, soon: true },
+    ],
   },
 ];
 
 export function AppSidebar({ footer }: { footer: ReactNode }) {
-  const pathname = usePathname();
   const { setOpenMobile } = useSidebar();
 
   return (
@@ -71,7 +82,9 @@ export function AppSidebar({ footer }: { footer: ReactNode }) {
           <SidebarMenuItem>
             <SidebarMenuButton
               size="lg"
-              render={<Link href="/today" onClick={() => setOpenMobile(false)} />}
+              render={
+                <Link href="/today" onClick={() => setOpenMobile(false)} />
+              }
             >
               <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary font-semibold text-primary-foreground">
                 C
@@ -85,39 +98,64 @@ export function AppSidebar({ footer }: { footer: ReactNode }) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        {NAV.map((group) => (
-          <SidebarGroup key={group.label}>
-            <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {group.items.map((item) => (
-                  <SidebarMenuItem key={item.href}>
-                    {item.soon ? (
-                      <>
-                        <SidebarMenuButton disabled tooltip={`${item.label} (próximamente)`}>
-                          <item.icon />
-                          <span>{item.label}</span>
-                        </SidebarMenuButton>
-                        <SidebarMenuBadge>Pronto</SidebarMenuBadge>
-                      </>
-                    ) : (
+        {/* usePathname es dato de la petición en rutas dinámicas: va tras Suspense. */}
+        <Suspense fallback={<NavGroups pathname={null} />}>
+          <ActiveNavGroups />
+        </Suspense>
+      </SidebarContent>
+      <SidebarFooter>{footer}</SidebarFooter>
+    </Sidebar>
+  );
+}
+
+function ActiveNavGroups() {
+  return <NavGroups pathname={usePathname()} />;
+}
+
+function NavGroups({ pathname }: { pathname: string | null }) {
+  const { setOpenMobile } = useSidebar();
+
+  return (
+    <>
+      {NAV.map((group) => (
+        <SidebarGroup key={group.label}>
+          <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {group.items.map((item) => (
+                <SidebarMenuItem key={item.href}>
+                  {item.soon ? (
+                    <>
                       <SidebarMenuButton
-                        isActive={pathname.startsWith(item.href)}
-                        tooltip={item.label}
-                        render={<Link href={item.href} onClick={() => setOpenMobile(false)} />}
+                        disabled
+                        tooltip={`${item.label} (próximamente)`}
                       >
                         <item.icon />
                         <span>{item.label}</span>
                       </SidebarMenuButton>
-                    )}
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        ))}
-      </SidebarContent>
-      <SidebarFooter>{footer}</SidebarFooter>
-    </Sidebar>
+                      <SidebarMenuBadge>Pronto</SidebarMenuBadge>
+                    </>
+                  ) : (
+                    <SidebarMenuButton
+                      isActive={pathname?.startsWith(item.href) ?? false}
+                      tooltip={item.label}
+                      render={
+                        <Link
+                          href={item.href}
+                          onClick={() => setOpenMobile(false)}
+                        />
+                      }
+                    >
+                      <item.icon />
+                      <span>{item.label}</span>
+                    </SidebarMenuButton>
+                  )}
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      ))}
+    </>
   );
 }

@@ -55,6 +55,19 @@ export async function getProject(id: string): Promise<ProjectDetail | null> {
   return data;
 }
 
+/** Solo los campos del proyecto (para el formulario de edición). */
+export async function getProjectFields(id: string): Promise<Project | null> {
+  const { supabase } = await requireUser();
+  const { data, error } = await supabase
+    .from("projects")
+    .select("*")
+    .eq("id", id)
+    .is("deleted_at", null)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
 /** Pagos no borrados de todos los proyectos no archivados (para el resumen de Hoy). */
 export async function listAllPayments(): Promise<(Payment & { project: { name: string } | null })[]> {
   const { supabase } = await requireUser();

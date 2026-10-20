@@ -3,7 +3,8 @@ import { z } from "zod";
 import { isISODate } from "@/lib/dates";
 import { parseDriveUrl } from "@/lib/drive";
 
-const emptyToNull = (v: unknown) => (typeof v === "string" && v.trim() === "" ? null : v);
+const emptyToNull = (v: unknown) =>
+  v === undefined || (typeof v === "string" && v.trim() === "") ? null : v;
 
 export const optionalDate = z.preprocess(
   emptyToNull,
