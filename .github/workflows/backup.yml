@@ -1,0 +1,67 @@
+# Backup de Chronos hacia el repo privado chronos-backups.
+# - Automático: domingo 10 p. m. (Colombia) = lunes 03:00 UTC. El primer domingo del mes es completo.
+# - Manual: desde Ajustes → Backups en la app (workflow_dispatch) o desde la pestaña Actions.
+# Secrets: SUPABASE_DB_URL, BACKUP_USER_EMAIL, BACKUPS_REPO_TOKEN.
+
+name: Backup
+
+on:
+  schedule:
+    - cron: "0 3 * * 1"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "incremental | full"
+        type: choice
+        options: [incremental, full]
+        default: incremental
+      trigger:
+        description: "manual | scheduled"
+        type: choice
+        options: [manual, scheduled]
+        default: manual
+
+concurrency:
+  group: backup
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout Chronos
+        uses: actions/checkout@v4
+
+      - name: Checkout chronos-backups
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/chronos-backups
+          token: ${{ secrets.BACKUPS_REPO_TOKEN }}
+          path: backup-repo
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Identidad de git para el commit del backup
+        working-directory: backup-repo
+        run: |
+          git config user.name "chronos-backup"
+          git config user.email "chronos-backup@users.noreply.github.com"
+
+      - name: Backup
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          BACKUP_USER_EMAIL: ${{ secrets.BACKUP_USER_EMAIL }}
+        run: >
+          npx tsx scripts/backup.ts
+          --out backup-repo
+          --mode ${{ github.event_name == 'schedule' && 'auto' || inputs.mode }}
+          --trigger ${{ github.event_name == 'schedule' && 'scheduled' || inputs.trigger }}
