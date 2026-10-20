@@ -84,12 +84,30 @@ npm run db:types                            # regenera lib/supabase/database.typ
 - [ ] *Settings → Environment Variables*: las de `.env.example`. Las `NEXT_PUBLIC_*` llevan visibilidad `config`; `CRON_SECRET` y `GITHUB_DISPATCH_TOKEN` van como `secret`.
 - [ ] Después del deploy, *Settings → Cron Jobs* muestra `/api/health`. Con "Run" se prueba a mano.
 
-### GitHub
-- [ ] Repo privado `chronos-backups` creado
-- [ ] Secrets de Actions en Chronos (fase de backups):
-  - `SUPABASE_SECRET_KEY`
-  - `SUPABASE_DB_URL`: *Connect → Session pooler*, con la contraseña
-  - `BACKUPS_REPO_TOKEN`
+### GitHub: backups
+El workflow `.github/workflows/backup.yml` copia los datos al repo privado `chronos-backups`:
+- **automático:** domingo 10 p. m. (hora de Colombia);
+- **manual:** desde Ajustes → Backups, o desde *Actions → Backup → Run workflow*.
+
+1. **Repo de destino:** en github.com → *New repository* → nombre `chronos-backups`, **Private**. Puede quedar vacío.
+2. **Token para escribir en el repo de backups:**
+   - Avatar → *Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token*.
+   - Nombre `chronos-backups-writer`; *Repository access: Only select repositories* → `chronos-backups`.
+   - *Permissions → Repository permissions → Contents: Read and write*.
+   - Generarlo y copiarlo.
+3. **Secrets de Actions** en el repo **Chronos** (*Settings → Secrets and variables → Actions → New repository secret*):
+   - `BACKUPS_REPO_TOKEN`: el token del paso 2.
+   - `SUPABASE_DB_URL`: en Supabase, *Connect* (botón arriba) → *Session pooler* → copiar la URI y reemplazar `[YOUR-PASSWORD]` por la contraseña de la base.
+   - `BACKUP_USER_EMAIL`: tu email de login en Chronos.
+4. **Token para el botón manual:**
+   - Otro fine-grained token, `chronos-backup-dispatch`.
+   - Acceso solo al repo `Chronos`, con *Permissions → Actions: Read and write*.
+   - Guardarlo en **Vercel** como `GITHUB_DISPATCH_TOKEN` (visibilidad `secret`) y hacer *Redeploy*.
+5. **Probar:** en Chronos → *Actions → Backup → Run workflow*.
+   - Debe aparecer un commit en `chronos-backups` con `summaries/AAAA-MM-DD-resumen.md`.
+   - En la app debe aparecer en *Ajustes → Backups*.
+
+Cómo restaurar: ver el `README.md` dentro de `chronos-backups` (`npx tsx scripts/restore.ts …`).
 
 ## Nota sobre OneDrive
 El proyecto está dentro de OneDrive. Conviene excluir `node_modules/` y `.next/` de la sincronización: clic derecho → "Liberar espacio", o mover el repo fuera de OneDrive. Git ya es el respaldo del código.

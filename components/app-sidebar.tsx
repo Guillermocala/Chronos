@@ -67,7 +67,7 @@ const NAV: { label: string; items: NavItem[] }[] = [
   {
     label: "Sistema",
     items: [
-      { href: "/settings", label: "Ajustes", icon: SettingsIcon, soon: true },
+      { href: "/settings", label: "Ajustes", icon: SettingsIcon },
     ],
   },
 ];

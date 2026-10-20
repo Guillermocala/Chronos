@@ -79,7 +79,13 @@ Chronos es un gestor personal de tickets, sprints y valor en COP por proyecto. L
   - el parser está en `lib/granola/parse.ts`; "+ Tarea" acepta los mismos marcadores;
   - `/guide` tiene las instrucciones para Granola, las plantillas y un probador;
   - `/import` muestra una vista previa editable, guarda la nota en `meeting_notes` y crea los ítems. Las líneas de Tickets quedan como tareas `is_ticket_candidate` hasta la fase de tickets.
-- **Backups:**
+- **Backups** (fase 4, `lib/backup/` + `scripts/backup.ts`/`restore.ts` + `.github/workflows/backup.yml`):
+  - el script se conecta con `pg` vía `SUPABASE_DB_URL`;
+  - la vista `project_last_change` decide qué proyectos exportar contra `manifest.json`;
+  - el esquema se respalda como copia de `supabase/migrations/`;
+  - la restauración genera SQL con `session_replication_role = replica` (sin triggers) y upsert por id;
+  - el historial está en `backup_runs` (Ajustes → Backups); `/api/export` descarga todo en JSON con la sesión del usuario.
+- **Backups (diseño original):**
   - semanal (domingo 10 p. m., hora de Colombia) y manual desde la app;
   - incremental por proyecto: los proyectos sin cambios no se reexportan;
   - copia completa mensual;

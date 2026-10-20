@@ -26,6 +26,19 @@ export function serverEnv() {
   });
 }
 
+// Opcional: sin token, el botón de backup manual se muestra deshabilitado.
+const githubSchema = z.object({
+  GITHUB_DISPATCH_TOKEN: z.string().min(1).optional(),
+  GITHUB_REPOSITORY: z.string().regex(/^[\w.-]+\/[\w.-]+$/).default("Guillermocala/Chronos"),
+});
+
+export function githubEnv() {
+  return githubSchema.parse({
+    GITHUB_DISPATCH_TOKEN: process.env.GITHUB_DISPATCH_TOKEN || undefined,
+    GITHUB_REPOSITORY: process.env.GITHUB_REPOSITORY || undefined,
+  });
+}
+
 export function isAllowedEmail(email: string | undefined | null) {
   return (
     !!email &&
