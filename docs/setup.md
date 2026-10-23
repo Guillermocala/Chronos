@@ -112,6 +112,15 @@ Cómo restaurar: ver el `README.md` dentro de `chronos-backups` (`npx tsx script
 ## Nota sobre OneDrive
 El proyecto está dentro de OneDrive. Conviene excluir `node_modules/` y `.next/` de la sincronización: clic derecho → "Liberar espacio", o mover el repo fuera de OneDrive. Git ya es el respaldo del código.
 
+## Dar acceso a otra persona (usuario de prueba)
+Cada usuario tiene **su propio espacio vacío**: no ve tus proyectos, pagos ni tickets.
+1. En Vercel, *Settings → Environment Variables* → `ALLOWED_EMAILS` = `tu@correo.com, ayudante@correo.com`. **Tu correo va primero**: el primero es el dueño y el único que puede lanzar backups. Si existe la variable anterior `ALLOWED_EMAIL`, puedes borrarla. Luego haz *Redeploy*.
+2. En Supabase, *Authentication → Users → Add user → Create new user* → su email, una **contraseña temporal** de 12 caracteres o más y **Auto Confirm User** marcado.
+3. Envíale la contraseña por un canal seguro. Al entrar, la cambia en **Ajustes → Cuenta**.
+4. Para quitarle el acceso, sácalo de `ALLOWED_EMAILS` y haz *Redeploy*. Si quieres borrar también su usuario, ve a Supabase → *Users* → ⋯ → *Delete user*.
+
+Los backups automáticos solo copian los datos del dueño (`BACKUP_USER_EMAIL`).
+
 ## Instalar Chronos en el celular (PWA)
 - **Android (Chrome):** abre el sitio → menú ⋮ → **Instalar app**.
 - **iPhone (Safari):** abre el sitio → botón Compartir → **Agregar a inicio**.

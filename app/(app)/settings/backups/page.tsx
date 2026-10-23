@@ -6,6 +6,7 @@ import { Markdown } from "@/components/markdown";
 import { BackupButtons } from "@/components/settings/backup-buttons";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Empty,
@@ -25,7 +26,7 @@ import {
 } from "@/components/ui/table";
 import { requireUser } from "@/lib/auth";
 import { isBackupRunning, listBackupRuns, type BackupRun } from "@/lib/data/backups";
-import { githubEnv } from "@/lib/env";
+import { githubEnv, isOwnerEmail } from "@/lib/env";
 
 export const metadata: Metadata = { title: "Backups · Chronos" };
 
@@ -50,7 +51,24 @@ export default function BackupsPage() {
 }
 
 async function BackupsContent() {
-  await requireUser();
+  const { email } = await requireUser();
+  if (!isOwnerEmail(email)) {
+    return (
+      <Alert>
+        <InfoIcon />
+        <AlertTitle>Backups administrados por el dueño</AlertTitle>
+        <AlertDescription>
+          Los backups automáticos y manuales los gestiona la cuenta principal. Puedes descargar tus
+          propios datos con el botón de abajo.
+        </AlertDescription>
+        <div className="pt-3">
+          <Button variant="outline" size="sm" nativeButton={false} render={<a href="/api/export" download />}>
+            Descargar mis datos (JSON)
+          </Button>
+        </div>
+      </Alert>
+    );
+  }
   const runs = await listBackupRuns();
   const { GITHUB_DISPATCH_TOKEN, GITHUB_REPOSITORY } = githubEnv();
   const owner = GITHUB_REPOSITORY.split("/")[0];

@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { includesEmail, parseAllowedEmails } from "@/lib/allowed-emails";
+
 // Variables públicas: Next.js las incrusta en el bundle del cliente, por eso
 // deben leerse con `process.env.NEXT_PUBLIC_*` literal (no por índice dinámico).
 const publicSchema = z.object({
@@ -8,7 +10,6 @@ const publicSchema = z.object({
 });
 
 const serverSchema = z.object({
-  ALLOWED_EMAIL: z.email(),
   CRON_SECRET: z.string().min(16),
 });
 
@@ -20,10 +21,10 @@ export const publicEnv = publicSchema.parse({
 
 // Solo para código de servidor (proxy, Server Actions, Route Handlers).
 export function serverEnv() {
-  return serverSchema.parse({
-    ALLOWED_EMAIL: process.env.ALLOWED_EMAIL,
-    CRON_SECRET: process.env.CRON_SECRET,
-  });
+  return {
+    ...serverSchema.parse({ CRON_SECRET: process.env.CRON_SECRET }),
+    ALLOWED_EMAILS: parseAllowedEmails(process.env.ALLOWED_EMAILS, process.env.ALLOWED_EMAIL),
+  };
 }
 
 // Opcional: sin token, el botón de backup manual se muestra deshabilitado.
@@ -40,8 +41,10 @@ export function githubEnv() {
 }
 
 export function isAllowedEmail(email: string | undefined | null) {
-  return (
-    !!email &&
-    email.trim().toLowerCase() === serverEnv().ALLOWED_EMAIL.trim().toLowerCase()
-  );
+  return includesEmail(serverEnv().ALLOWED_EMAILS, email);
+}
+
+/** El dueño (primer correo de la lista) es quien administra los backups. */
+export function isOwnerEmail(email: string | undefined | null) {
+  return includesEmail(serverEnv().ALLOWED_EMAILS.slice(0, 1), email);
 }

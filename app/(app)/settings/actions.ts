@@ -6,11 +6,12 @@ import { z } from "zod";
 import { fail, firstIssue, ok, type ActionResult } from "@/lib/action-result";
 import { requireUser } from "@/lib/auth";
 import { RUNNING_WINDOW_MS } from "@/lib/data/backups";
-import { githubEnv } from "@/lib/env";
+import { githubEnv, isOwnerEmail } from "@/lib/env";
 
 /** Lanza el workflow de backup en GitHub Actions (workflow_dispatch). */
 export async function dispatchBackup(mode: "incremental" | "full"): Promise<ActionResult> {
-  const { supabase } = await requireUser();
+  const { supabase, email } = await requireUser();
+  if (!isOwnerEmail(email)) return fail("Solo el dueño de Chronos puede lanzar backups.");
   if (mode !== "incremental" && mode !== "full") return fail("Modo inválido.");
 
   const { GITHUB_DISPATCH_TOKEN: token, GITHUB_REPOSITORY: repo } = githubEnv();
