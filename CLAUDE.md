@@ -12,3 +12,4 @@ Gestor personal de tickets, sprints y valor en COP. Lo usa una sola persona y la
 - Moneda: COP sin decimales. Formatear con `Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })`.
 - Toda tabla nueva lleva `user_id` + RLS, `updated_at` con trigger y soft delete (`deleted_at`), porque los backups incrementales dependen de esto.
 - Los cambios de esquema van siempre como migraciones en `supabase/migrations/`, nunca editados a mano en el dashboard.
+- Pruebas de UX en vivo: skill `ux-breakpoints`. La base local es la de producción, así que solo se escribe sobre datos `[DEMO]`.

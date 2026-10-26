@@ -91,6 +91,19 @@ Chronos es un gestor personal de tickets, sprints y valor en COP por proyecto. L
 - **PWA:**
   - `app/manifest.ts`, íconos con `ImageResponse` y `public/sw.js`, que solo sirve la página `/offline` y no cachea datos;
   - el proxy deja públicos esos recursos.
+  - **Estado: en pausa** (decisión del 2026-10-26). El canal principal es el navegador con vista responsive; la PWA queda como está, sin trabajo nuevo.
+    - Qué hay:
+      - manifest con `start_url` `/today` y atajos (Hoy, Nueva tarea, Importar dictado);
+      - logo en `public/icons/chronos-logo.jpg` (reloj de arena blanco sobre `#343434`); `scripts/generate-icons.ts` genera desde él `app/icon.png` (favicon), `app/apple-icon.png`, los íconos del manifest y `public/icons/chronos-mark.png` (dibujo suelto que usan el sidebar y la imagen para compartir);
+      - imagen para compartir en `app/opengraph-image.tsx`;
+      - `components/pwa/register-sw.tsx` registra el service worker solo en producción;
+      - las exclusiones van en el `matcher` de `proxy.ts`.
+    - Verificado el 2026-10-26 en el build de producción: manifest, `sw.js`, `/offline` e íconos responden 200. Sin instalarla, la app funciona igual.
+    - Pendientes para retomarla:
+      - ~~logo definitivo~~ (incorporado el 2026-10-26);
+      - probar la instalación en Android e iOS;
+      - decidir si vale la pena una caché offline de lectura. Hoy no se cachea nada de la cuenta, a propósito, para no mostrar datos sin sesión;
+      - revisar los atajos del manifest.
 - **Accesibilidad:**
   - enlace "Saltar al contenido", `prefers-reduced-motion` y foco visible;
   - las acciones destructivas ofrecen **Deshacer** en el aviso (`restoreDeleted`, solo tablas permitidas).

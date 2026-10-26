@@ -43,3 +43,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# SQL generado por scripts/seed-demo.ts y scripts/restore.ts
+seed-demo*.sql
+restore.sql
+
+# Pruebas de UX en vivo (skill ux-breakpoints): sesión, capturas y reportes
+.ux/
+__pycache__/

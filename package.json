@@ -9,6 +9,7 @@
     "lint": "eslint",
     "db:push": "supabase db push",
     "db:types": "supabase gen types typescript --linked --schema public > lib/supabase/database.types.ts",
+    "db:seed-demo": "tsx scripts/seed-demo.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },

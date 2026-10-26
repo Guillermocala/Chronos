@@ -49,11 +49,20 @@ Están en `.claude/skills/` y versionadas en `skills-lock.json`:
 - `web-design-guidelines`: revisión de UI y accesibilidad
 - `shadcn` (oficial de shadcn/ui): agregar, componer y personalizar componentes
 - `vitest` (de antfu, que mantiene Vitest): tests unitarios, mocks y configuración
+- `webapp-testing` (oficial de Anthropic): manejar la app en un navegador real con Playwright para Python
+- `ux-breakpoints` (propia, no viene de `skills-lock.json`): pruebas de experiencia en vivo con sesión iniciada, con el catálogo de fallas de Chronos, scripts y formato de reporte
+
+### Pruebas de UX en vivo (`ux-breakpoints`)
+- Requisitos: Python 3 con `python -m pip install --user playwright`. Usa el Chrome instalado (`channel="chrome"`), así que no hace falta `playwright install`.
+- Credenciales: `USER_EMAIL` y `USER_PASSWORD` en `.env`. Los scripts las leen y nunca las imprimen. La sesión queda en `.ux/auth.json` (ignorado por git, igual que capturas y reportes en `.ux/`).
+- **La base es la misma de producción:** las pruebas solo escriben sobre elementos `[DEMO]`; el resto es solo lectura.
+- Uso: `python .claude/skills/ux-breakpoints/scripts/server.py start`, luego `layout_scan.py`, `flows_readonly.py` y `form_resilience.py` (en la misma carpeta), y al final `server.py stop`.
 
 Para Next.js 16 no hace falta skill: la documentación de la versión instalada está en `node_modules/next/dist/docs/` (ver `AGENTS.md`).
 Opcional: `vercel/next.js@next-dev-loop` verifica la app en ejecución, pero requiere `npm i -g agent-browser`.
 
 **Regla:** al incorporar una tecnología nueva, buscar su skill oficial con `npx skills find <tecnología>`, revisar su contenido y agregarla con `--agent claude-code`.
+Con Node 20, la CLI actual de `skills` (1.7, pide Node ≥ 22.20) no arranca: usar `npx skills@1.4.9 …` hasta actualizar Node.
 
 Para actualizarlas: `npx skills update`.
 
@@ -121,10 +130,18 @@ Cada usuario tiene **su propio espacio vacío**: no ve tus proyectos, pagos ni t
 
 Los backups automáticos solo copian los datos del dueño (`BACKUP_USER_EMAIL`).
 
+### Datos de prueba
+Para llenar el espacio de un usuario con proyectos de ejemplo (todo marcado `[DEMO]`):
+1. Agrega `SUPABASE_DB_URL` (la misma URI del secreto de GitHub) a `.env.local`.
+2. `npm run db:seed-demo -- --email persona@correo.com` genera `seed-demo.sql` para revisarlo. Agrega `--apply` para ejecutarlo.
+3. Para retirarlos (soft delete): `npm run db:seed-demo -- --email persona@correo.com --reset --apply`.
+
+Escenarios incluidos: un mensual en curso con cobros recibidos y vencidos, un mensual con fechas de la regla anterior (al editarlo, la confirmación propone corregirlas), un mensual que empieza hoy, uno de precio fijo con sprints, tickets, horas y una nota de reunión, y uno entregado en soporte.
+
 ## Instalar Chronos en el celular (PWA)
 - **Android (Chrome):** abre el sitio → menú ⋮ → **Instalar app**.
 - **iPhone (Safari):** abre el sitio → botón Compartir → **Agregar a inicio**.
 
 Abre directo en **Hoy**, sin la barra del navegador. Si mantienes presionado el ícono aparecen los atajos "Nueva tarea" e "Importar dictado". Sin conexión se muestra una página de aviso: los datos siempre se leen en vivo y no se guardan en el teléfono.
 
-Para cambiar el ícono, edita `lib/pwa/icon.tsx` y ejecuta `npx tsx scripts/generate-icons.tsx`.
+Para cambiar el logo, reemplaza `public/icons/chronos-logo.jpg` (cuadrado, trazo claro sobre fondo oscuro), ajusta `ICON_BACKGROUND` en `lib/pwa/icon.ts` si cambia el fondo y ejecuta `npx tsx scripts/generate-icons.ts`.

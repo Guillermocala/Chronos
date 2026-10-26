@@ -5,7 +5,12 @@ import { includesEmail, parseAllowedEmails } from "@/lib/allowed-emails";
 // Variables públicas: Next.js las incrusta en el bundle del cliente, por eso
 // deben leerse con `process.env.NEXT_PUBLIC_*` literal (no por índice dinámico).
 const publicSchema = z.object({
-  NEXT_PUBLIC_SUPABASE_URL: z.url(),
+  // Solo el dominio del proyecto: con una ruta (p. ej. ".../rest/v1/") el login falla
+  // con "Credenciales inválidas" porque Auth queda en una URL que no existe.
+  NEXT_PUBLIC_SUPABASE_URL: z.url().refine(
+    (url) => new URL(url).pathname === "/",
+    "NEXT_PUBLIC_SUPABASE_URL debe ser solo el dominio (https://<ref>.supabase.co), sin /rest/v1.",
+  ),
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().min(1),
 });
 
