@@ -190,7 +190,8 @@ export function HoursChart({
               dataKey="label"
               tickLine={false}
               axisLine={false}
-              width={56}
+              width={80}
+              tickFormatter={(v: string) => (v.length > 12 ? `${v.slice(0, 11)}…` : v)}
             />
           </>
         ) : (

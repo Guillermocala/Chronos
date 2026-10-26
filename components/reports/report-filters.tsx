@@ -36,6 +36,7 @@ export function ReportFilters({ project, months, projects }: Props) {
     <div className="flex flex-wrap items-center gap-2">
       <NativeSelect
         size="sm"
+        className="max-w-full sm:max-w-xs"
         aria-label="Proyecto"
         value={project ?? ""}
         onChange={(e) =>

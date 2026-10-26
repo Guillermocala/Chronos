@@ -11,6 +11,7 @@ import {
   SunIcon,
   type LucideIcon,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Suspense, type ReactNode } from "react";
@@ -83,8 +84,9 @@ export function AppSidebar({ footer }: { footer: ReactNode }) {
                 <Link href="/today" onClick={() => setOpenMobile(false)} />
               }
             >
-              <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary font-semibold text-primary-foreground">
-                C
+              {/* Fondo fijo de marca (no bg-primary): el trazo es blanco también en tema claro. */}
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[#343434]">
+                <Image src="/icons/chronos-mark.png" alt="" width={16} height={20} className="h-5 w-auto" priority />
               </span>
               <span className="truncate font-semibold" translate="no">Chronos</span>
             </SidebarMenuButton>

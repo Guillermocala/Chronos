@@ -7,7 +7,7 @@ export function StatCard({ label, value, hint }: { label: string; value: ReactNo
     <Card size="sm">
       <CardHeader>
         <CardDescription>{label}</CardDescription>
-        <CardTitle className="text-xl tabular-nums">{value}</CardTitle>
+        <CardTitle className="text-lg tabular-nums [overflow-wrap:anywhere] sm:text-xl">{value}</CardTitle>
         {hint && <CardDescription>{hint}</CardDescription>}
       </CardHeader>
     </Card>

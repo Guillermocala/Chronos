@@ -18,10 +18,28 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const DESCRIPTION = "Gestor personal de tickets, sprints y valor por proyecto";
+
+// URL pública para las vistas previas al compartir (WhatsApp, Slack…). En Vercel
+// es el dominio de producción; en local, localhost.
+const siteUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
+  ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+  : `http://localhost:${process.env.PORT ?? 3000}`;
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: "Chronos",
-  description: "Gestor personal de tickets, sprints y valor por proyecto",
+  description: DESCRIPTION,
   applicationName: "Chronos",
+  openGraph: {
+    type: "website",
+    siteName: "Chronos",
+    title: "Chronos",
+    description: DESCRIPTION,
+    locale: "es_CO",
+    url: "/",
+  },
+  twitter: { card: "summary_large_image", title: "Chronos", description: DESCRIPTION },
   // iPhone: al agregarla a inicio abre sin barra de Safari.
   appleWebApp: { capable: true, title: "Chronos", statusBarStyle: "default" },
 };
