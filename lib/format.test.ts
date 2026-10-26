@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatCOP, formatDate, formatHours, parseCOP, relativeDay } from "./format";
+import { formatCOP, formatDate, formatHours, parseCOP, plural, relativeDay } from "./format";
 
 // Intl usa espacios no separables; se normalizan para comparar.
 const plain = (s: string) => s.replace(/\s/g, " ");
@@ -50,5 +50,13 @@ describe("fechas y horas", () => {
   it("formatea horas", () => {
     expect(formatHours(1.5)).toBe("1,5 h");
     expect(formatHours(null)).toBe("—");
+  });
+});
+
+describe("plural", () => {
+  it("usa singular solo para 1", () => {
+    expect(plural(1, "pago", "pagos")).toBe("1 pago");
+    expect(plural(0, "pago", "pagos")).toBe("0 pagos");
+    expect(plural(3, "pago", "pagos")).toBe("3 pagos");
   });
 });

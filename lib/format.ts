@@ -6,6 +6,11 @@ const copFormatter = new Intl.NumberFormat("es-CO", {
   maximumFractionDigits: 0,
 });
 
+/** "1 pago", "3 pagos". */
+export function plural(count: number, singular: string, pluralForm: string): string {
+  return `${count} ${count === 1 ? singular : pluralForm}`;
+}
+
 export function formatCOP(value: number | null | undefined): string {
   if (value == null || Number.isNaN(value)) return "—";
   return copFormatter.format(Math.round(value));

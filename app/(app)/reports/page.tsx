@@ -31,7 +31,7 @@ import {
   listReportPayments,
   listReportProjects,
 } from "@/lib/data/reports";
-import { formatCOP, formatShortDate } from "@/lib/format";
+import { formatCOP, formatShortDate, plural } from "@/lib/format";
 import {
   formatMonth,
   monthlyCashflow,
@@ -156,7 +156,7 @@ async function ReportsContent({
           label="Vencido"
           value={formatCOP(totals.overdue)}
           hint={
-            totals.overdueCount > 0 ? `${totals.overdueCount} pagos` : undefined
+            totals.overdueCount > 0 ? plural(totals.overdueCount, "pago", "pagos") : undefined
           }
         />
         <StatCard

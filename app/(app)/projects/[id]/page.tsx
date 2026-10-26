@@ -19,7 +19,7 @@ import { todayCO } from "@/lib/dates";
 import { getProject, listProjectOptions } from "@/lib/data/projects";
 import { listProjectTasks } from "@/lib/data/tasks";
 import { getProjectHours, getRunningTimer, listProjectTickets } from "@/lib/data/tickets";
-import { formatCOP, formatDate, formatHours } from "@/lib/format";
+import { formatCOP, formatDate, formatHours, plural } from "@/lib/format";
 import { formatDuration } from "@/lib/time";
 import { BILLING_LABELS, phaseInfo } from "@/lib/projects/labels";
 import { contractValue, paymentTotals, projectValuation } from "@/lib/valuation";
@@ -106,13 +106,15 @@ async function ProjectContent({ params }: Pick<PageProps<"/projects/[id]">, "par
       )}
 
       <Tabs defaultValue="summary">
-        <TabsList>
-          <TabsTrigger value="summary">Resumen</TabsTrigger>
-          <TabsTrigger value="tickets">Tickets ({tickets.length})</TabsTrigger>
-          <TabsTrigger value="payments">Pagos ({payments.length})</TabsTrigger>
-          <TabsTrigger value="sprints">Sprints ({sprints.length})</TabsTrigger>
-          <TabsTrigger value="tasks">Tareas ({tasks.length})</TabsTrigger>
-        </TabsList>
+        <div className="-mx-4 overflow-x-auto px-4 max-sm:[mask-image:linear-gradient(to_right,black_85%,transparent)] sm:mx-0 sm:px-0">
+          <TabsList>
+            <TabsTrigger value="summary">Resumen</TabsTrigger>
+            <TabsTrigger value="tickets">Tickets ({tickets.length})</TabsTrigger>
+            <TabsTrigger value="payments">Pagos ({payments.length})</TabsTrigger>
+            <TabsTrigger value="sprints">Sprints ({sprints.length})</TabsTrigger>
+            <TabsTrigger value="tasks">Tareas ({tasks.length})</TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="summary" className="flex flex-col gap-4 pt-4">
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -130,7 +132,7 @@ async function ProjectContent({ params }: Pick<PageProps<"/projects/[id]">, "par
             <StatCard
               label="Vencido"
               value={formatCOP(totals.overdue)}
-              hint={totals.overdueCount > 0 ? `${totals.overdueCount} pagos` : undefined}
+              hint={totals.overdueCount > 0 ? plural(totals.overdueCount, "pago", "pagos") : undefined}
             />
           </div>
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">

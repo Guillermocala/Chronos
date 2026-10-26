@@ -23,7 +23,7 @@ import { todayCO } from "@/lib/dates";
 import { listAllPayments, listProjectOptions } from "@/lib/data/projects";
 import { listTodayCandidates } from "@/lib/data/tasks";
 import { getRunningTimer, listTicketsInProgress } from "@/lib/data/tickets";
-import { formatCOP } from "@/lib/format";
+import { formatCOP, plural } from "@/lib/format";
 import { groupTodayTasks, TODAY_GROUPS } from "@/lib/tasks/today";
 import { paymentTotals } from "@/lib/valuation";
 
@@ -141,7 +141,7 @@ async function TodayContent({ searchParams }: Pick<PageProps<"/today">, "searchP
         <StatCard
           label="Vencido"
           value={formatCOP(totals.overdue)}
-          hint={totals.overdueCount > 0 ? `${totals.overdueCount} pagos` : undefined}
+          hint={totals.overdueCount > 0 ? plural(totals.overdueCount, "pago", "pagos") : undefined}
         />
       </section>
     </>
