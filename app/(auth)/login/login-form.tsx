@@ -21,6 +21,7 @@ export function LoginForm() {
           type="email"
           autoComplete="email"
           required
+          defaultValue={state?.email}
         />
       </div>
       <div className="flex flex-col gap-2">
@@ -31,6 +32,7 @@ export function LoginForm() {
           type="password"
           autoComplete="current-password"
           required
+          aria-invalid={state?.error ? true : undefined}
         />
       </div>
       {state?.error && (

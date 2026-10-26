@@ -46,7 +46,7 @@ export function SprintDialog({
   const [open, setOpen] = useState(false);
   const [start, setStart] = useState(sprint?.start_date ?? suggestedStart);
   const [end, setEnd] = useState(sprint?.end_date ?? addDays(suggestedStart, defaultSprintDays - 1));
-  const { pending, run } = useAction();
+  const { pending, submit } = useAction();
   const prefix = sprint?.id ?? "new";
 
   return (
@@ -54,7 +54,7 @@ export function SprintDialog({
       <DialogTrigger render={trigger}>{triggerLabel}</DialogTrigger>
       <DialogContent>
         <form
-          action={(formData) => run(() => saveSprint(formData), () => setOpen(false))}
+          onSubmit={submit(saveSprint, () => setOpen(false))}
           className="flex flex-col gap-4"
         >
           <DialogHeader>

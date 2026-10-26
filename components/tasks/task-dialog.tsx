@@ -34,7 +34,7 @@ type Props = {
 };
 
 export function TaskDialog({ task, projects, open, onOpenChange }: Props) {
-  const { pending, run } = useAction();
+  const { pending, submit } = useAction();
   const [kind, setKind] = useState(task.kind);
 
   // El proyecto actual puede estar cerrado y no venir en la lista: se agrega.
@@ -45,9 +45,9 @@ export function TaskDialog({ task, projects, open, onOpenChange }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90dvh] overflow-y-auto overscroll-contain sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg">
         <form
-          action={(formData) => run(() => updateTask(formData), () => onOpenChange(false))}
+          onSubmit={submit(updateTask, () => onOpenChange(false))}
           className="flex flex-col gap-4"
         >
           <DialogHeader>

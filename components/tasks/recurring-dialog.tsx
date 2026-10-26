@@ -42,7 +42,7 @@ type Props = {
 
 export function RecurringDialog({ projects, today, recurring, trigger, triggerLabel }: Props) {
   const [open, setOpen] = useState(false);
-  const { pending, run } = useAction();
+  const { pending, submit } = useAction();
   const [frequency, setFrequency] = useState<Frequency>(recurring?.frequency ?? "monthly");
   const [interval, setInterval] = useState(String(recurring?.interval ?? 1));
   const [weekdayValue, setWeekday] = useState(String(recurring?.weekday ?? 1));
@@ -62,9 +62,9 @@ export function RecurringDialog({ projects, today, recurring, trigger, triggerLa
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger render={trigger}>{triggerLabel}</DialogTrigger>
-      <DialogContent className="max-h-[90dvh] overflow-y-auto overscroll-contain sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg">
         <form
-          action={(formData) => run(() => saveRecurring(formData), () => setOpen(false))}
+          onSubmit={submit(saveRecurring, () => setOpen(false))}
           className="flex flex-col gap-4"
         >
           <DialogHeader>

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
-import { fail, firstIssue, ok, type ActionResult } from "@/lib/action-result";
+import { fail, failIssue, ok, type ActionResult } from "@/lib/action-result";
 import { requireUser } from "@/lib/auth";
 import { isISODate } from "@/lib/dates";
 import { parseDriveUrl } from "@/lib/drive";
@@ -40,7 +40,7 @@ export type ImportPayload = z.input<typeof importSchema>;
 export async function importDictation(payload: ImportPayload): Promise<ActionResult> {
   const { supabase } = await requireUser();
   const parsed = importSchema.safeParse(payload);
-  if (!parsed.success) return fail(firstIssue(parsed.error));
+  if (!parsed.success) return failIssue(parsed.error);
   const { title, date: noteDate, markdown, items } = parsed.data;
 
   // Proyecto de la nota: el único usado por los ítems, si es uno solo.

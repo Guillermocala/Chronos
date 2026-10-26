@@ -32,7 +32,7 @@ type Props = {
 
 export function QuickAddDialog({ projectId, defaultMyDay = false, defaultOpen = false, variant = "button" }: Props) {
   const [open, setOpen] = useState(defaultOpen);
-  const { pending, run } = useAction();
+  const { pending, submit } = useAction();
 
   const trigger =
     variant === "sidebar" ? (
@@ -49,7 +49,7 @@ export function QuickAddDialog({ projectId, defaultMyDay = false, defaultOpen = 
       </DialogTrigger>
       <DialogContent>
         <form
-          action={(formData) => run(() => quickAddTask(formData), () => setOpen(false))}
+          onSubmit={submit(quickAddTask, () => setOpen(false))}
           className="flex flex-col gap-4"
         >
           <DialogHeader>

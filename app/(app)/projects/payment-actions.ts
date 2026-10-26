@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
-import { fail, firstIssue, ok, type ActionResult } from "@/lib/action-result";
+import { fail, failIssue, ok, type ActionResult } from "@/lib/action-result";
 import { requireUser } from "@/lib/auth";
 import { todayCO } from "@/lib/dates";
 import { paymentSchema } from "@/lib/projects/schema";
@@ -16,7 +16,7 @@ function refresh() {
 export async function savePayment(formData: FormData): Promise<ActionResult> {
   const { supabase } = await requireUser();
   const parsed = paymentSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return fail(firstIssue(parsed.error));
+  if (!parsed.success) return failIssue(parsed.error);
   const { id, ...payment } = parsed.data;
   const row = { ...payment, paid_at: payment.status === "received" ? payment.paid_at : null };
 

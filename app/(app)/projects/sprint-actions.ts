@@ -3,14 +3,14 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
-import { fail, firstIssue, ok, type ActionResult } from "@/lib/action-result";
+import { fail, failIssue, ok, type ActionResult } from "@/lib/action-result";
 import { requireUser } from "@/lib/auth";
 import { sprintSchema } from "@/lib/projects/schema";
 
 export async function saveSprint(formData: FormData): Promise<ActionResult> {
   const { supabase } = await requireUser();
   const parsed = sprintSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return fail(firstIssue(parsed.error));
+  if (!parsed.success) return failIssue(parsed.error);
   const { id, ...sprint } = parsed.data;
 
   const { error } = id

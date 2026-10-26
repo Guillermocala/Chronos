@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
-import { fail, firstIssue, ok, type ActionResult } from "@/lib/action-result";
+import { fail, failIssue, ok, type ActionResult } from "@/lib/action-result";
 import { requireUser } from "@/lib/auth";
 import { RUNNING_WINDOW_MS } from "@/lib/data/backups";
 import { githubEnv, isOwnerEmail } from "@/lib/env";
@@ -71,7 +71,7 @@ const AUTH_ERRORS: Record<string, string> = {
 export async function changePassword(formData: FormData): Promise<ActionResult> {
   const { supabase } = await requireUser();
   const parsed = passwordSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return fail(firstIssue(parsed.error));
+  if (!parsed.success) return failIssue(parsed.error);
 
   const { error } = await supabase.auth.updateUser({ password: parsed.data.password });
   if (error) return fail(AUTH_ERRORS[error.code ?? ""] ?? "No se pudo cambiar la contraseña.");

@@ -1,7 +1,5 @@
 "use client";
 
-import { useRef } from "react";
-
 import { changePassword } from "@/app/(app)/settings/actions";
 import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
@@ -10,13 +8,11 @@ import { Spinner } from "@/components/ui/spinner";
 import { useAction } from "@/hooks/use-action-toast";
 
 export function PasswordForm() {
-  const { pending, run } = useAction();
-  const form = useRef<HTMLFormElement>(null);
+  const { pending, submit } = useAction();
 
   return (
     <form
-      ref={form}
-      action={(formData) => run(() => changePassword(formData), () => form.current?.reset())}
+      onSubmit={submit(changePassword, (f) => f.reset())}
       className="flex max-w-sm flex-col gap-4"
     >
       <FieldGroup>

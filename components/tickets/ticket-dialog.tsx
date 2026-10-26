@@ -41,15 +41,15 @@ type Props = {
 export function TicketDialog({ projectId, sprints, ticket, defaultSprintId, trigger, triggerLabel }: Props) {
   const [open, setOpen] = useState(false);
   const [kind, setKind] = useState(ticket?.kind ?? "scope");
-  const { pending, run } = useAction();
+  const { pending, submit } = useAction();
   const p = ticket?.id ?? "new";
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger render={trigger}>{triggerLabel}</DialogTrigger>
-      <DialogContent className="max-h-[90dvh] overflow-y-auto overscroll-contain sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg">
         <form
-          action={(formData) => run(() => saveTicket(formData), () => setOpen(false))}
+          onSubmit={submit(saveTicket, () => setOpen(false))}
           className="flex flex-col gap-4"
         >
           <DialogHeader>

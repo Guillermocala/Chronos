@@ -35,7 +35,7 @@ type Props = {
 export function DeliverDialog({ projectId, supportDays, today, remainingCOP }: Props) {
   const [open, setOpen] = useState(false);
   const [registerFinal, setRegisterFinal] = useState(remainingCOP !== null && remainingCOP > 0);
-  const { pending, run } = useAction();
+  const { pending, submit } = useAction();
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -45,7 +45,7 @@ export function DeliverDialog({ projectId, supportDays, today, remainingCOP }: P
       </DialogTrigger>
       <DialogContent>
         <form
-          action={(formData) => run(() => deliverProject(formData), () => setOpen(false))}
+          onSubmit={submit(deliverProject, () => setOpen(false))}
           className="flex flex-col gap-4"
         >
           <DialogHeader>

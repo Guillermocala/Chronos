@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
-import { fail, firstIssue, ok, type ActionResult } from "@/lib/action-result";
+import { fail, failIssue, firstIssue, ok, type ActionResult } from "@/lib/action-result";
 import { requireUser } from "@/lib/auth";
 import { addDays, todayCO } from "@/lib/dates";
 import { formatShortDate } from "@/lib/format";
@@ -67,7 +67,7 @@ export async function quickAddTask(formData: FormData): Promise<ActionResult> {
 export async function updateTask(formData: FormData): Promise<ActionResult> {
   const { supabase } = await requireUser();
   const parsed = taskUpdateSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return fail(firstIssue(parsed.error));
+  if (!parsed.success) return failIssue(parsed.error);
 
   const { id, ...changes } = parsed.data;
   const { error } = await supabase.from("tasks").update(changes).eq("id", id);

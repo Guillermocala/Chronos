@@ -1,7 +1,6 @@
 "use client";
 
 import { Trash2Icon } from "lucide-react";
-import { useRef } from "react";
 
 import { deleteTimeEntry, logTime } from "@/app/(app)/tickets/time-actions";
 import { restoreDeleted } from "@/app/(app)/undo-actions";
@@ -23,14 +22,12 @@ const timeFormatter = new Intl.DateTimeFormat("es-CO", {
 const dateOf = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Bogota" });
 
 export function TimeLog({ ticketId, entries, today }: { ticketId: string; entries: TimeEntry[]; today: ISODate }) {
-  const { pending, run } = useAction();
-  const form = useRef<HTMLFormElement>(null);
+  const { pending, run, submit } = useAction();
 
   return (
     <div className="flex flex-col gap-4">
       <form
-        ref={form}
-        action={(formData) => run(() => logTime(formData), () => form.current?.reset())}
+        onSubmit={submit(logTime, (f) => f.reset())}
         className="flex flex-col gap-3"
       >
         <input type="hidden" name="ticket_id" value={ticketId} />
@@ -62,14 +59,14 @@ export function TimeLog({ ticketId, entries, today }: { ticketId: string; entrie
             const runningEntry = e.hours === null && e.ended_at === null;
             const manual = e.started_at === e.ended_at;
             return (
-              <li key={e.id} className="flex items-center gap-3 px-3 py-2 text-sm">
-                <span className="w-24 shrink-0 text-muted-foreground">
+              <li key={e.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 text-sm sm:flex-nowrap">
+                <span className="w-20 shrink-0 text-muted-foreground sm:w-24">
                   {formatShortDate(dateOf.format(new Date(e.started_at)))}
                 </span>
-                <span className="w-24 shrink-0 font-medium tabular-nums">
+                <span className="w-20 shrink-0 font-medium tabular-nums sm:w-24">
                   {runningEntry ? "En curso…" : formatDuration(Number(e.hours))}
                 </span>
-                <span className="min-w-0 flex-1 truncate text-muted-foreground">
+                <span className="order-last min-w-0 basis-full truncate text-muted-foreground sm:order-none sm:basis-auto sm:flex-1">
                   {e.note ?? (manual ? "Registro manual" : `${timeFormatter.format(new Date(e.started_at))}${e.ended_at ? ` – ${timeFormatter.format(new Date(e.ended_at))}` : ""}`)}
                 </span>
                 {!runningEntry && (

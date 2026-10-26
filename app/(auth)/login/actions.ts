@@ -11,7 +11,8 @@ const credentialsSchema = z.object({
   password: z.string().min(1),
 });
 
-export type LoginState = { error?: string } | undefined;
+// `email` vuelve al formulario para no tener que reescribirlo tras un error.
+export type LoginState = { error?: string; email?: string } | undefined;
 
 const INVALID = "Credenciales inválidas.";
 
@@ -23,14 +24,15 @@ export async function login(
     email: formData.get("email"),
     password: formData.get("password"),
   });
+  const email = String(formData.get("email") ?? "");
   if (!parsed.success || !isAllowedEmail(parsed.data.email)) {
-    return { error: INVALID };
+    return { error: INVALID, email };
   }
 
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword(parsed.data);
   if (error) {
-    return { error: INVALID };
+    return { error: INVALID, email };
   }
 
   redirect("/today");

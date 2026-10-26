@@ -33,7 +33,7 @@ type Props = {
 
 export function TicketActions({ ticket, sprints, suggestedExtraCOP }: Props) {
   const router = useRouter();
-  const { pending, run } = useAction();
+  const { pending, run, submit } = useAction();
   const [extraOpen, setExtraOpen] = useState(false);
 
   return (
@@ -58,7 +58,7 @@ export function TicketActions({ ticket, sprints, suggestedExtraCOP }: Props) {
           </DialogTrigger>
           <DialogContent>
             <form
-              action={(formData) => run(() => markExtraBillable(formData), () => setExtraOpen(false))}
+              onSubmit={submit(markExtraBillable, () => setExtraOpen(false))}
               className="flex flex-col gap-4"
             >
               <DialogHeader>

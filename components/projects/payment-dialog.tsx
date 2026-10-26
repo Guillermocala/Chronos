@@ -35,7 +35,7 @@ type Props = {
 export function PaymentDialog({ projectId, today, payment, trigger, triggerLabel }: Props) {
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useState(payment?.status ?? "expected");
-  const { pending, run } = useAction();
+  const { pending, submit } = useAction();
   const prefix = payment?.id ?? "new";
 
   return (
@@ -43,7 +43,7 @@ export function PaymentDialog({ projectId, today, payment, trigger, triggerLabel
       <DialogTrigger render={trigger}>{triggerLabel}</DialogTrigger>
       <DialogContent>
         <form
-          action={(formData) => run(() => savePayment(formData), () => setOpen(false))}
+          onSubmit={submit(savePayment, () => setOpen(false))}
           className="flex flex-col gap-4"
         >
           <DialogHeader>
