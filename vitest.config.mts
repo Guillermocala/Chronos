@@ -9,5 +9,8 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["lib/**/*.test.ts"],
+    // Los tests *.int.test.ts levantan PGlite con todas las migraciones (~4 s cada uno);
+    // en paralelo pueden pasar de los 10 s por defecto.
+    hookTimeout: 60_000,
   },
 });
