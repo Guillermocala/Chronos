@@ -893,7 +893,7 @@ export type Database = {
       backup_trigger: "scheduled" | "manual"
       billing_type: "fixed" | "retainer"
       doc_kind: "doc" | "sheet" | "slides" | "folder" | "file"
-      note_source: "granola" | "manual"
+      note_source: "granola" | "manual" | "voice"
       payment_kind: "advance" | "partial" | "final" | "monthly" | "extra"
       payment_status: "expected" | "received"
       project_phase: "active" | "delivered" | "support" | "closed"
@@ -1036,7 +1036,7 @@ export const Constants = {
       backup_trigger: ["scheduled", "manual"],
       billing_type: ["fixed", "retainer"],
       doc_kind: ["doc", "sheet", "slides", "folder", "file"],
-      note_source: ["granola", "manual"],
+      note_source: ["granola", "manual", "voice"],
       payment_kind: ["advance", "partial", "final", "monthly", "extra"],
       payment_status: ["expected", "received"],
       project_phase: ["active", "delivered", "support", "closed"],
