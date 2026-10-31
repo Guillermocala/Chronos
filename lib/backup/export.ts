@@ -46,8 +46,7 @@ export async function collectProject(db: Db, projectId: string): Promise<Project
   const [time_entries, action_items] = await Promise.all([
     rows(
       db,
-      `select to_jsonb(e) as row from public.time_entries e
-         join public.tickets t on t.id = e.ticket_id where t.project_id = $1`,
+      `select to_jsonb(e) as row from public.time_entries e where e.project_id = $1`,
       [projectId],
     ),
     rows(

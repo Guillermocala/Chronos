@@ -46,6 +46,11 @@ export function buildRestoreSql(data: RestoreData, { userId }: { userId: string 
     );
   }
 
+  // Backups anteriores a las horas directas: el proyecto se toma del ticket
+  // (los triggers están desactivados durante la restauración).
+  statements.push(
+    "update public.time_entries e set project_id = t.project_id from public.tickets t where t.id = e.ticket_id and e.project_id is null;",
+  );
   statements.push("commit;");
   return `${statements.join("\n\n")}\n`;
 }

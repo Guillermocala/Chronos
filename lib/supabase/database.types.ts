@@ -196,8 +196,12 @@ export type Database = {
           kind: Database["public"]["Enums"]["payment_kind"]
           note: string | null
           paid_at: string | null
+          period_end: string | null
+          period_start: string | null
           project_id: string
           status: Database["public"]["Enums"]["payment_status"]
+          settled_at: string | null
+          settled_hours: number | null
           ticket_id: string | null
           updated_at: string
           user_id: string
@@ -211,8 +215,12 @@ export type Database = {
           kind: Database["public"]["Enums"]["payment_kind"]
           note?: string | null
           paid_at?: string | null
+          period_end?: string | null
+          period_start?: string | null
           project_id: string
           status?: Database["public"]["Enums"]["payment_status"]
+          settled_at?: string | null
+          settled_hours?: number | null
           ticket_id?: string | null
           updated_at?: string
           user_id?: string
@@ -226,8 +234,12 @@ export type Database = {
           kind?: Database["public"]["Enums"]["payment_kind"]
           note?: string | null
           paid_at?: string | null
+          period_end?: string | null
+          period_start?: string | null
           project_id?: string
           status?: Database["public"]["Enums"]["payment_status"]
+          settled_at?: string | null
+          settled_hours?: number | null
           ticket_id?: string | null
           updated_at?: string
           user_id?: string
@@ -740,8 +752,9 @@ export type Database = {
           hours: number | null
           id: string
           note: string | null
+          project_id: string | null
           started_at: string
-          ticket_id: string
+          ticket_id: string | null
           updated_at: string
           user_id: string
         }
@@ -752,8 +765,9 @@ export type Database = {
           hours?: number | null
           id?: string
           note?: string | null
+          project_id?: string | null
           started_at?: string
-          ticket_id: string
+          ticket_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -764,12 +778,27 @@ export type Database = {
           hours?: number | null
           id?: string
           note?: string | null
+          project_id?: string | null
           started_at?: string
-          ticket_id?: string
+          ticket_id?: string | null
           updated_at?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "time_entries_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_last_change"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "time_entries_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "time_entries_ticket_id_fkey"
             columns: ["ticket_id"]
@@ -790,6 +819,7 @@ export type Database = {
     Views: {
       project_hours: {
         Row: {
+          direct_logged: number | null
           done_tickets: number | null
           extra_logged: number | null
           open_tickets: number | null
@@ -891,7 +921,7 @@ export type Database = {
       backup_mode: "incremental" | "full"
       backup_status: "running" | "success" | "failed"
       backup_trigger: "scheduled" | "manual"
-      billing_type: "fixed" | "retainer"
+      billing_type: "fixed" | "retainer" | "hourly_adjusted"
       doc_kind: "doc" | "sheet" | "slides" | "folder" | "file"
       note_source: "granola" | "manual" | "voice"
       payment_kind: "advance" | "partial" | "final" | "monthly" | "extra"
@@ -1034,7 +1064,7 @@ export const Constants = {
       backup_mode: ["incremental", "full"],
       backup_status: ["running", "success", "failed"],
       backup_trigger: ["scheduled", "manual"],
-      billing_type: ["fixed", "retainer"],
+      billing_type: ["fixed", "retainer", "hourly_adjusted"],
       doc_kind: ["doc", "sheet", "slides", "folder", "file"],
       note_source: ["granola", "manual", "voice"],
       payment_kind: ["advance", "partial", "final", "monthly", "extra"],
