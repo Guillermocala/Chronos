@@ -28,12 +28,13 @@ const importSchema = z.object({
   date: z.string().refine(isISODate, "Fecha de la nota inválida."),
   markdown: z.string().max(200_000),
   items: z.array(itemSchema).min(1, "Selecciona al menos un ítem.").max(200),
+  source: z.enum(["granola", "voice"]).default("granola"),
 });
 
 export type ImportPayload = z.input<typeof importSchema>;
 
 /**
- * Guarda la nota de Granola y crea las tareas/seguimientos seleccionados.
+ * Guarda la nota (de Granola o dictada por voz) y crea las tareas/seguimientos seleccionados.
  * Las líneas de "Tickets" se crean como tareas candidatas a ticket (el módulo
  * de tickets llega en la fase 3).
  */
@@ -41,16 +42,16 @@ export async function importDictation(payload: ImportPayload): Promise<ActionRes
   const { supabase } = await requireUser();
   const parsed = importSchema.safeParse(payload);
   if (!parsed.success) return failIssue(parsed.error);
-  const { title, date: noteDate, markdown, items } = parsed.data;
+  const { title, date: noteDate, markdown, items, source } = parsed.data;
 
   // Proyecto de la nota: el único usado por los ítems, si es uno solo.
   const projectIds = [...new Set(items.map((i) => i.projectId).filter(Boolean))];
   const { data: note, error: noteError } = await supabase
     .from("meeting_notes")
     .insert({
-      title: title || `Dictado ${noteDate}`,
+      title: title || (source === "voice" ? `Dictado por voz ${noteDate}` : `Dictado ${noteDate}`),
       meeting_date: noteDate,
-      source: "granola",
+      source,
       content_md: markdown,
       project_id: projectIds.length === 1 ? projectIds[0] : null,
     })
