@@ -15,10 +15,10 @@ export async function GET(request: Request) {
   const entries = await listReportEntries(range.from, range.to, range.project);
   const csv = toCsv(entries, [
     { header: "Fecha", value: (e) => dateInBogota(e.started_at) },
-    { header: "Proyecto", value: (e) => `${e.ticket.project.code_prefix} · ${e.ticket.project.name}` },
-    { header: "Ticket", value: (e) => e.ticket.code },
-    { header: "Título", value: (e) => e.ticket.title },
-    { header: "Tipo", value: (e) => TICKET_KIND_LABELS[e.ticket.kind] },
+    { header: "Proyecto", value: (e) => `${e.project.code_prefix} · ${e.project.name}` },
+    { header: "Ticket", value: (e) => e.ticket?.code ?? "" },
+    { header: "Título", value: (e) => e.ticket?.title ?? "Horas directas al proyecto" },
+    { header: "Tipo", value: (e) => (e.ticket ? TICKET_KIND_LABELS[e.ticket.kind] : "Directa") },
     { header: "Horas", value: (e) => (e.hours === null ? null : Number(e.hours)) },
     { header: "Nota", value: (e) => e.note },
   ]);

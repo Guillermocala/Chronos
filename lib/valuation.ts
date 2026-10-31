@@ -1,6 +1,7 @@
 // Cálculo de valor en COP. Funciones puras: reciben solo los campos que necesitan
 // para poder probarse sin base de datos y reutilizarse en la fase de tickets/horas.
 
+import { isMonthlyBilling } from "@/lib/billing/hours-settlement";
 import { daysBetween, eachMonthOverlap, type ISODate } from "@/lib/dates";
 import type { Tables } from "@/lib/supabase/database.types";
 
@@ -26,7 +27,7 @@ export type PaymentLike = Pick<
 
 /**
  * Tarifa por hora estimada.
- * - retainer: mensualidad / horas esperadas por mes.
+ * - mensual (fijo u OPS): mensualidad / horas esperadas por mes.
  * - fijo: monto / horas estimadas de alcance (de los tickets si se conocen; si no,
  *   `estimated_total_hours` del proyecto).
  */
@@ -34,7 +35,7 @@ export function estimatedHourlyRate(
   project: ProjectBilling,
   scopeEstimatedHours?: number | null,
 ): number | null {
-  if (project.billing_type === "retainer") {
+  if (isMonthlyBilling(project.billing_type)) {
     const { monthly_fee_cop: fee, expected_hours_per_month: hours } = project;
     return fee != null && hours ? fee / hours : null;
   }
@@ -72,7 +73,7 @@ export function sprintValue(
   if (sprint.value_cop_override != null) {
     return { value: sprint.value_cop_override, source: "override" };
   }
-  if (project.billing_type === "retainer") {
+  if (isMonthlyBilling(project.billing_type)) {
     const fee = project.monthly_fee_cop;
     if (fee == null) return { value: null, source: "pending" };
     const total = eachMonthOverlap(sprint.start_date, sprint.end_date).reduce(
@@ -164,13 +165,15 @@ export type ProjectHours = {
   scope_logged: number;
   support_logged: number;
   extra_logged: number;
+  /** Horas registradas directo al proyecto, sin ticket. */
+  direct_logged?: number;
 };
 
 /**
  * Tarifa estimada vs real del alcance contratado.
- * La real = cobrado del contrato / (horas de alcance + soporte): el soporte no
- * cobrado la baja. Los extras se cobran aparte, así que ni sus horas ni sus
- * pagos entran (`receivedContractCOP` debe excluir pagos extra).
+ * La real = cobrado del contrato / (horas de alcance + soporte + directas): el
+ * soporte no cobrado la baja. Los extras se cobran aparte, así que ni sus horas
+ * ni sus pagos entran (`receivedContractCOP` debe excluir pagos extra).
  */
 export function projectValuation(
   project: ProjectBilling,
@@ -178,10 +181,11 @@ export function projectValuation(
   receivedContractCOP: number,
 ) {
   const estimatedRate = estimatedHourlyRate(project, hours.scope_estimated);
+  const direct = hours.direct_logged ?? 0;
   return {
     estimatedRate,
-    realRate: realHourlyRate(receivedContractCOP, hours.scope_logged + hours.support_logged),
+    realRate: realHourlyRate(receivedContractCOP, hours.scope_logged + hours.support_logged + direct),
     support: supportImpact(hours.support_logged, estimatedRate),
-    loggedHours: hours.scope_logged + hours.support_logged + hours.extra_logged,
+    loggedHours: hours.scope_logged + hours.support_logged + hours.extra_logged + direct,
   };
 }

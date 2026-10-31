@@ -1,15 +1,17 @@
 import { addDays, weekday, type ISODate } from "@/lib/dates";
 
 export type TicketKind = "scope" | "support" | "extra";
+/** Tipo de hora: de un ticket o directa al proyecto (sin ticket). */
+export type HourKind = TicketKind | "direct";
 
 export type HourEntry = {
   started_at: string;
   hours: number | null;
   deleted_at: string | null;
-  kind: TicketKind;
+  kind: HourKind;
 };
 
-export type WeekHours = { week: ISODate; scope: number; support: number; extra: number };
+export type WeekHours = { week: ISODate; scope: number; support: number; extra: number; direct: number };
 
 const bogotaDate = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Bogota" });
 
@@ -25,13 +27,13 @@ export function mondayOf(date: ISODate): ISODate {
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
-/** Horas por semana (lunes a domingo) de las últimas `weeks` semanas, por tipo de ticket. */
+/** Horas por semana (lunes a domingo) de las últimas `weeks` semanas, por tipo (ticket o directa). */
 export function weeklyHours(entries: HourEntry[], weeks: number, today: ISODate): WeekHours[] {
   const lastMonday = mondayOf(today);
   const buckets = new Map<ISODate, WeekHours>();
   for (let i = weeks - 1; i >= 0; i--) {
     const week = addDays(lastMonday, -7 * i);
-    buckets.set(week, { week, scope: 0, support: 0, extra: 0 });
+    buckets.set(week, { week, scope: 0, support: 0, extra: 0, direct: 0 });
   }
   for (const e of entries) {
     if (e.deleted_at || e.hours === null) continue;
@@ -48,6 +50,7 @@ export type ProjectHoursRow = {
   scope_logged: number;
   support_logged: number;
   extra_logged: number;
+  direct_logged?: number;
 };
 
 /** Proyectos con horas registradas, de más a menos horas totales. */
@@ -60,7 +63,8 @@ export function hoursByProject(rows: ProjectHoursRow[]) {
       scope: round2(r.scope_logged),
       support: round2(r.support_logged),
       extra: round2(r.extra_logged),
-      total: round2(r.scope_logged + r.support_logged + r.extra_logged),
+      direct: round2(r.direct_logged ?? 0),
+      total: round2(r.scope_logged + r.support_logged + r.extra_logged + (r.direct_logged ?? 0)),
     }))
     .filter((r) => r.total > 0)
     .sort((a, b) => b.total - a.total);

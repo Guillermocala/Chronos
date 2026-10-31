@@ -82,8 +82,11 @@ const retainer = base.extend({
   billing_day: optionalInt(1, 28, "El día de cobro debe estar entre 1 y 28."),
 });
 
+// Mensual ajustado por horas (OPS): mismos datos; cada cuenta se liquida por horas reales.
+const hourlyAdjusted = retainer.extend({ billing_type: z.literal("hourly_adjusted") });
+
 export const projectSchema = z
-  .discriminatedUnion("billing_type", [fixed, retainer], {
+  .discriminatedUnion("billing_type", [fixed, retainer, hourlyAdjusted], {
     error: "Elige la modalidad de cobro.",
   })
   .refine(
@@ -116,7 +119,7 @@ export const projectSchema = z
         }
       : {
           ...common,
-          billing_type: "retainer",
+          billing_type: p.billing_type,
           fixed_amount_cop: null,
           estimated_total_hours: null,
           monthly_fee_cop: p.monthly_fee_cop,

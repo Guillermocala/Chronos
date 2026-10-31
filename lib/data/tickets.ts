@@ -115,13 +115,14 @@ const EMPTY_HOURS: ProjectHours = {
   scope_logged: 0,
   support_logged: 0,
   extra_logged: 0,
+  direct_logged: 0,
 };
 
 export async function getProjectHours(projectId: string): Promise<ProjectHours> {
   const { supabase } = await requireUser();
   const { data, error } = await supabase
     .from("project_hours")
-    .select("scope_estimated, scope_logged, support_logged, extra_logged")
+    .select("scope_estimated, scope_logged, support_logged, extra_logged, direct_logged")
     .eq("project_id", projectId)
     .maybeSingle();
   if (error) throw error;
@@ -131,7 +132,26 @@ export async function getProjectHours(projectId: string): Promise<ProjectHours> 
     scope_logged: Number(data.scope_logged ?? 0),
     support_logged: Number(data.support_logged ?? 0),
     extra_logged: Number(data.extra_logged ?? 0),
+    direct_logged: Number(data.direct_logged ?? 0),
   };
+}
+
+export type ProjectTimeEntry = Pick<TimeEntry, "id" | "started_at" | "ended_at" | "hours" | "note" | "ticket_id"> & {
+  ticket: Pick<Ticket, "code" | "kind" | "billable"> | null;
+};
+
+/** Horas terminadas del proyecto (con y sin ticket), de la más reciente a la más antigua. */
+export async function listProjectTimeEntries(projectId: string): Promise<ProjectTimeEntry[]> {
+  const { supabase } = await requireUser();
+  const { data, error } = await supabase
+    .from("time_entries")
+    .select("id, started_at, ended_at, hours, note, ticket_id, ticket:tickets(code, kind, billable)")
+    .eq("project_id", projectId)
+    .is("deleted_at", null)
+    .not("hours", "is", null)
+    .order("started_at", { ascending: false });
+  if (error) throw error;
+  return data;
 }
 
 export async function getSprint(id: string) {

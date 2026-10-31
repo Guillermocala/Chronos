@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import { fail, failIssue, ok, type ActionResult } from "@/lib/action-result";
 import { requireUser } from "@/lib/auth";
+import { isMonthlyBilling } from "@/lib/billing/hours-settlement";
 import { addDays, todayCO } from "@/lib/dates";
 import type { Project } from "@/lib/data/projects";
 import { buildMonthlySchedule, diffMonthlySchedule } from "@/lib/payments";
@@ -149,7 +150,7 @@ type ContractFields = Pick<
 
 /** Calendario de mensualidades del contrato (vacío si no es mensual o le faltan datos). */
 function scheduleFor(project: ContractFields) {
-  return project.billing_type === "retainer" &&
+  return isMonthlyBilling(project.billing_type) &&
     project.start_date &&
     project.contract_months &&
     project.monthly_fee_cop
@@ -165,7 +166,7 @@ function scheduleFor(project: ContractFields) {
 function readMonthlyPayments(supabase: Supabase, projectId: string) {
   return supabase
     .from("payments")
-    .select("id, status, due_date, amount_cop")
+    .select("id, status, due_date, amount_cop, settled_at")
     .eq("project_id", projectId)
     .eq("kind", "monthly")
     .is("deleted_at", null);
@@ -222,7 +223,7 @@ export async function regenerateMonthlyPayments(id: string): Promise<ActionResul
     .single();
   if (error) return fail("No se encontró el proyecto.");
   if (
-    project.billing_type !== "retainer" ||
+    !isMonthlyBilling(project.billing_type) ||
     !project.start_date ||
     !project.contract_months ||
     !project.monthly_fee_cop

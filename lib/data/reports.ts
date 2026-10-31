@@ -10,10 +10,10 @@ export type ReportPayment = Pick<
   "id" | "amount_cop" | "status" | "due_date" | "paid_at" | "kind" | "note" | "project_id"
 > & { project: { name: string; code_prefix: string } };
 
+/** Registro de horas: con ticket o directo al proyecto (ticket null). */
 export type ReportEntry = Pick<Tables<"time_entries">, "id" | "started_at" | "hours" | "deleted_at" | "note"> & {
-  ticket: Pick<Tables<"tickets">, "id" | "code" | "title" | "kind" | "project_id"> & {
-    project: { name: string; code_prefix: string };
-  };
+  project: { name: string; code_prefix: string };
+  ticket: Pick<Tables<"tickets">, "id" | "code" | "title" | "kind"> | null;
 };
 
 export type ReportProject = Tables<"projects"> & { hours: ProjectHours };
@@ -41,14 +41,14 @@ export async function listReportEntries(from: ISODate, to: ISODate, projectId?: 
   let query = supabase
     .from("time_entries")
     .select(
-      "id, started_at, hours, deleted_at, note, ticket:tickets!inner(id, code, title, kind, project_id, project:projects!inner(name, code_prefix))",
+      "id, started_at, hours, deleted_at, note, project:projects!inner(name, code_prefix), ticket:tickets(id, code, title, kind)",
     )
     .is("deleted_at", null)
     .not("hours", "is", null)
     .gte("started_at", `${from}T00:00:00-05:00`)
     .lte("started_at", `${to}T23:59:59-05:00`)
     .order("started_at");
-  if (projectId) query = query.eq("ticket.project_id", projectId);
+  if (projectId) query = query.eq("project_id", projectId);
   const { data, error } = await query;
   if (error) throw error;
   return data;
@@ -73,6 +73,7 @@ export async function listReportProjects(): Promise<ReportProject[]> {
         scope_logged: Number(h?.scope_logged ?? 0),
         support_logged: Number(h?.support_logged ?? 0),
         extra_logged: Number(h?.extra_logged ?? 0),
+        direct_logged: Number(h?.direct_logged ?? 0),
       },
     };
   });

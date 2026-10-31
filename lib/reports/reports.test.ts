@@ -49,6 +49,7 @@ describe("horas", () => {
       [
         { started_at: "2026-10-20T15:00:00Z", hours: 2, deleted_at: null, kind: "scope" },
         { started_at: "2026-10-21T15:00:00Z", hours: 1.5, deleted_at: null, kind: "support" },
+        { started_at: "2026-10-22T15:00:00Z", hours: 0.5, deleted_at: null, kind: "direct" },
         // 2026-10-19 02:00 UTC = domingo 18 en Colombia → semana anterior
         { started_at: "2026-10-19T02:00:00Z", hours: 3, deleted_at: null, kind: "scope" },
         { started_at: "2026-10-21T15:00:00Z", hours: 9, deleted_at: "2026-10-22T00:00:00Z", kind: "scope" },
@@ -58,20 +59,21 @@ describe("horas", () => {
       "2026-10-22",
     );
     expect(weeks).toEqual([
-      { week: "2026-10-12", scope: 3, support: 0, extra: 0 },
-      { week: "2026-10-19", scope: 2, support: 1.5, extra: 0 },
+      { week: "2026-10-12", scope: 3, support: 0, extra: 0, direct: 0 },
+      { week: "2026-10-19", scope: 2, support: 1.5, extra: 0, direct: 0.5 },
     ]);
   });
 
   it("hoursByProject ordena por total y omite proyectos sin horas", () => {
     const rows = hoursByProject([
-      { project_id: "a", code_prefix: "A", name: "A", scope_logged: 1, support_logged: 0, extra_logged: 0 },
+      { project_id: "a", code_prefix: "A", name: "A", scope_logged: 1, support_logged: 0, extra_logged: 0, direct_logged: 7 },
       { project_id: "b", code_prefix: "B", name: "B", scope_logged: 3, support_logged: 2, extra_logged: 1 },
       { project_id: "c", code_prefix: "C", name: "C", scope_logged: 0, support_logged: 0, extra_logged: 0 },
     ]);
+    // A suma 7 h directas (sin ticket).
     expect(rows.map((r) => [r.label, r.total])).toEqual([
+      ["A", 8],
       ["B", 6],
-      ["A", 1],
     ]);
   });
 });

@@ -89,6 +89,20 @@ describe("planMonthlySync", () => {
     expect(plan.toInsert.map((p) => p.due_date)).toEqual(["2026-11-28", "2026-12-28"]);
   });
 
+  it("respeta las mensualidades liquidadas por horas (OPS)", () => {
+    const existing = [
+      { id: "settled", status: "expected" as const, due_date: "2026-10-28", amount_cop: 2_625_000, settled_at: "2026-10-28T10:00:00Z" },
+      { id: "pending", status: "expected" as const, due_date: "2026-11-28", amount_cop: 3_500_000 },
+    ];
+    const plan = planMonthlySync(existing, schedule("2026-09-01", 3));
+    expect(plan.toDelete).toEqual(["pending"]);
+    expect(plan.toInsert.map((p) => p.due_date)).toEqual(["2026-11-28", "2026-12-28"]);
+    const diff = diffMonthlySchedule(existing, schedule("2026-09-01", 3), "2026-10-30");
+    expect(diff.toDelete).toEqual([]);
+    expect(diff.kept).toBe(1);
+    expect(diff.receivedKept).toBe(1);
+  });
+
   it("sin pagos previos inserta todo el calendario", () => {
     const plan = planMonthlySync([], schedule("2026-10-01", 2));
     expect(plan.toDelete).toEqual([]);

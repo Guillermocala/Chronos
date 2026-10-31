@@ -113,7 +113,7 @@ async function ReportsContent({
       started_at: e.started_at,
       hours: e.hours,
       deleted_at: e.deleted_at,
-      kind: e.ticket.kind,
+      kind: e.ticket?.kind ?? "direct",
     })),
     WEEKS,
     today,
@@ -122,7 +122,7 @@ async function ReportsContent({
     label: formatShortDate(w.week).replace(/^\w+,\s*/, ""),
   }));
   const weeklyTotal = weekly.reduce(
-    (sum, w) => sum + w.scope + w.support + w.extra,
+    (sum, w) => sum + w.scope + w.support + w.extra + w.direct,
     0,
   );
   const byProject = hoursByProject(
@@ -133,6 +133,7 @@ async function ReportsContent({
       scope_logged: p.hours.scope_logged,
       support_logged: p.hours.support_logged,
       extra_logged: p.hours.extra_logged,
+      direct_logged: p.hours.direct_logged,
     })),
   );
 
@@ -256,6 +257,7 @@ async function ReportsContent({
                   <TableHead className="text-right">Alcance</TableHead>
                   <TableHead className="text-right">Soporte</TableHead>
                   <TableHead className="text-right">Extra</TableHead>
+                  <TableHead className="text-right">Directas</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -270,6 +272,9 @@ async function ReportsContent({
                     </TableCell>
                     <TableCell className="text-right tabular-nums">
                       {formatDuration(w.extra)}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {formatDuration(w.direct)}
                     </TableCell>
                   </TableRow>
                 ))}

@@ -42,12 +42,17 @@ export function buildMonthlySchedule({
 
 export type ExistingMonthlyPayment = Pick<Tables<"payments">, "id" | "status" | "due_date"> & {
   amount_cop?: number | null;
+  /** Liquidada por horas (OPS): se respeta igual que una recibida. */
+  settled_at?: string | null;
 };
+
+/** Recibida o liquidada: no se reemplaza al recalcular el contrato. */
+const isLocked = (p: ExistingMonthlyPayment) => p.status === "received" || p.settled_at != null;
 
 /**
  * Qué hacer con las mensualidades al (re)calcular el contrato: se reemplazan
  * todas las pendientes y se respetan los meses que ya tienen una mensualidad
- * recibida.
+ * recibida o liquidada.
  */
 export function planMonthlySync(
   existing: ExistingMonthlyPayment[],
@@ -55,11 +60,11 @@ export function planMonthlySync(
 ): { toDelete: string[]; toInsert: ScheduledPayment[] } {
   const paidMonths = new Set(
     existing
-      .filter((p) => p.status === "received" && p.due_date)
+      .filter((p) => isLocked(p) && p.due_date)
       .map((p) => p.due_date!.slice(0, 7)),
   );
   return {
-    toDelete: existing.filter((p) => p.status === "expected").map((p) => p.id),
+    toDelete: existing.filter((p) => !isLocked(p)).map((p) => p.id),
     toInsert: schedule.filter((p) => !paidMonths.has(p.due_date!.slice(0, 7))),
   };
 }
@@ -77,7 +82,7 @@ export type MonthlyDiff = {
   kept: number;
   /** Nuevos pendientes con fecha anterior a hoy. */
   overdue: ScheduledPayment[];
-  /** Meses ya cobrados que se respetan. */
+  /** Meses ya cobrados o liquidados que se respetan. */
   receivedKept: number;
 };
 
@@ -96,7 +101,7 @@ export function diffMonthlySchedule(
   today: ISODate,
 ): MonthlyDiff {
   const { toInsert: wanted } = planMonthlySync(existing, schedule);
-  const pending = existing.filter((p) => p.status === "expected");
+  const pending = existing.filter((p) => !isLocked(p));
 
   // Emparejamiento uno a uno por fecha + monto.
   const available = new Map<string, ExistingMonthlyPayment[]>();
@@ -123,6 +128,6 @@ export function diffMonthlySchedule(
       .sort((a, b) => a.due_date.localeCompare(b.due_date)),
     kept,
     overdue: toInsert.filter((p) => daysBetween(today, p.due_date!) < 0),
-    receivedKept: existing.filter((p) => p.status === "received").length,
+    receivedKept: existing.filter(isLocked).length,
   };
 }

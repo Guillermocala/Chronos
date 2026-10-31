@@ -3,7 +3,8 @@ import type { Enums, Tables } from "@/lib/supabase/database.types";
 
 export const BILLING_LABELS: Record<Enums<"billing_type">, string> = {
   fixed: "Pago fijo",
-  retainer: "Contratación mensual",
+  retainer: "Mensual fijo",
+  hourly_adjusted: "Mensual por horas (OPS)",
 };
 
 export const PAYMENT_KIND_LABELS: Record<Enums<"payment_kind">, string> = {

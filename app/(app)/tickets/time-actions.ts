@@ -61,8 +61,12 @@ export async function stopTimer(): Promise<ActionResult> {
   return hours === null ? fail("No hay un cronómetro activo.") : ok(`Registrado: ${formatDuration(hours)}.`);
 }
 
+const optionalUuid = z.preprocess((v) => (v === "" || v == null ? null : v), z.uuid().nullable());
+
 const logSchema = z.object({
-  ticket_id: z.uuid(),
+  // Con ticket, o directo al proyecto (sin ticket).
+  ticket_id: optionalUuid,
+  project_id: optionalUuid,
   date: z.string().refine(isISODate, "Fecha inválida."),
   duration: z.string().transform((v, ctx) => {
     const hours = parseDurationInput(v);
@@ -75,18 +79,20 @@ const logSchema = z.object({
   note: z.preprocess((v) => (v === "" ? null : v), z.string().trim().max(500).nullable()),
 });
 
-/** Registro manual: "1:30" el día indicado. */
+/** Registro manual: "1:30" el día indicado, a un ticket o directo al proyecto. */
 export async function logTime(formData: FormData): Promise<ActionResult> {
   const { supabase } = await requireUser();
   const parsed = logSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return failIssue(parsed.error);
-  const { ticket_id, date, duration, note } = parsed.data;
+  const { ticket_id, project_id, date, duration, note } = parsed.data;
+  if (!ticket_id && !project_id) return fail("Falta el ticket o el proyecto.");
 
   // Mediodía en Colombia para que la fecha no cambie por zona horaria.
+  // Con ticket, el proyecto lo completa la base de datos.
   const at = `${date}T12:00:00-05:00`;
   const { error } = await supabase
     .from("time_entries")
-    .insert({ ticket_id, started_at: at, ended_at: at, hours: duration, note });
+    .insert({ ticket_id, project_id: ticket_id ? null : project_id, started_at: at, ended_at: at, hours: duration, note });
   if (error) return fail("No se pudo registrar el tiempo.");
   refresh();
   return ok(`Registrado: ${formatDuration(duration)}.`);

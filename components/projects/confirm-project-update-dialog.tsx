@@ -101,8 +101,8 @@ export function ConfirmProjectUpdateDialog({ preview, pending, onOpenChange, onC
             {paymentsChange.receivedKept > 0 && (
               <p className="text-muted-foreground">
                 {paymentsChange.receivedKept === 1
-                  ? "1 pago ya recibido no se modifica."
-                  : `${paymentsChange.receivedKept} pagos ya recibidos no se modifican.`}
+                  ? "1 pago ya recibido o liquidado no se modifica."
+                  : `${paymentsChange.receivedKept} pagos ya recibidos o liquidados no se modifican.`}
               </p>
             )}
           </section>

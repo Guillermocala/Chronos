@@ -139,11 +139,12 @@ export function CashflowChart({
 }
 
 // ---------------------------------------------------------------------------
-// Horas por tipo (alcance / soporte / extra): por semana o por proyecto
+// Horas por tipo (alcance / soporte / directas / extra): por semana o por proyecto
 
 const hoursConfig = {
   scope: { label: "Alcance", color: "var(--chart-1)" },
   support: { label: "Soporte", color: "var(--chart-2)" },
+  direct: { label: "Directas", color: "var(--chart-4)" },
   extra: { label: "Extra", color: "var(--chart-3)" },
 } satisfies ChartConfig;
 
@@ -151,6 +152,7 @@ type HoursRow = {
   label: string;
   scope: number;
   support: number;
+  direct: number;
   extra: number;
 };
 
@@ -237,6 +239,13 @@ export function HoursChart({
           dataKey="support"
           stackId="a"
           fill="var(--color-support)"
+          {...GAP}
+          radius={0}
+        />
+        <Bar
+          dataKey="direct"
+          stackId="a"
+          fill="var(--color-direct)"
           {...GAP}
           radius={0}
         />
