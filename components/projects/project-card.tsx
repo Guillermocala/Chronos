@@ -9,6 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { isMonthlyBilling } from "@/lib/billing/hours-settlement";
 import type { ISODate } from "@/lib/dates";
 import type { ProjectWithPayments } from "@/lib/data/projects";
 import { formatCOP } from "@/lib/format";
@@ -44,7 +45,7 @@ export function ProjectCard({ project, today }: { project: ProjectWithPayments; 
         <div className="flex items-baseline justify-between gap-2">
           <span className="text-muted-foreground">{BILLING_LABELS[project.billing_type]}</span>
           <span className="font-medium tabular-nums">
-            {project.billing_type === "retainer"
+            {isMonthlyBilling(project.billing_type)
               ? `${formatCOP(project.monthly_fee_cop)}/mes`
               : formatCOP(value)}
           </span>

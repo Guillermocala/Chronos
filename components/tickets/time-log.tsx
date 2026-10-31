@@ -21,7 +21,11 @@ const timeFormatter = new Intl.DateTimeFormat("es-CO", {
 });
 const dateOf = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Bogota" });
 
-export function TimeLog({ ticketId, entries, today }: { ticketId: string; entries: TimeEntry[]; today: ISODate }) {
+type Target = { ticketId: string; projectId?: never } | { projectId: string; ticketId?: never };
+type Entry = Pick<TimeEntry, "id" | "started_at" | "ended_at" | "hours" | "note">;
+
+/** Registro manual de horas a un ticket o directo a un proyecto, con la lista de registros. */
+export function TimeLog({ ticketId, projectId, entries, today }: Target & { entries: Entry[]; today: ISODate }) {
   const { pending, run, submit } = useAction();
 
   return (
@@ -30,7 +34,8 @@ export function TimeLog({ ticketId, entries, today }: { ticketId: string; entrie
         onSubmit={submit(logTime, (f) => f.reset())}
         className="flex flex-col gap-3"
       >
-        <input type="hidden" name="ticket_id" value={ticketId} />
+        {ticketId && <input type="hidden" name="ticket_id" value={ticketId} />}
+        {projectId && <input type="hidden" name="project_id" value={projectId} />}
         <FieldGroup className="grid gap-3 sm:grid-cols-[9rem_8rem_1fr_auto] sm:items-end">
           <Field>
             <FieldLabel htmlFor="log-date">Fecha</FieldLabel>

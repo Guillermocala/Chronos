@@ -23,16 +23,25 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAction } from "@/hooks/use-action-toast";
+import { isMonthlyBilling, type PeriodRow } from "@/lib/billing/hours-settlement";
 import { daysBetween, type ISODate } from "@/lib/dates";
 import type { Payment, Project } from "@/lib/data/projects";
-import { formatCOP, formatDate } from "@/lib/format";
+import { formatCOP, formatDate, formatShortDate } from "@/lib/format";
 import { PAYMENT_KIND_LABELS } from "@/lib/projects/labels";
+import { formatDuration } from "@/lib/time";
 
 import { PaymentDialog } from "./payment-dialog";
+import { SettleDialog } from "./settle-dialog";
 
-type Props = { project: Project; payments: Payment[]; today: ISODate };
+type Props = {
+  project: Project;
+  payments: Payment[];
+  today: ISODate;
+  /** Solo OPS: período y valor calculado de cada mensualidad (por id de pago). */
+  settlements?: Record<string, PeriodRow>;
+};
 
-export function PaymentsTable({ project, payments, today }: Props) {
+export function PaymentsTable({ project, payments, today, settlements }: Props) {
   const { pending, run } = useAction();
 
   return (
@@ -49,7 +58,7 @@ export function PaymentsTable({ project, payments, today }: Props) {
             </>
           }
         />
-        {project.billing_type === "retainer" && (
+        {isMonthlyBilling(project.billing_type) && (
           <Button
             size="sm"
             variant="outline"
@@ -91,10 +100,26 @@ export function PaymentsTable({ project, payments, today }: Props) {
                 payment.status === "expected" &&
                 payment.due_date !== null &&
                 daysBetween(payment.due_date, today) > 0;
+              const settle = settlements?.[payment.id];
+              const periodEnded = settle ? settle.end < today : false;
               return (
                 <TableRow key={payment.id}>
                   <TableCell>
                     {PAYMENT_KIND_LABELS[payment.kind]}
+                    {settle && (
+                      <span className="block text-xs text-muted-foreground">
+                        Horas {formatShortDate(settle.start)} – {formatShortDate(settle.end)}
+                        {payment.settled_at ? (
+                          <Badge variant="secondary" className="ml-1.5">
+                            Liquidado · {formatDuration(Number(payment.settled_hours ?? 0))}
+                          </Badge>
+                        ) : payment.status === "expected" ? (
+                          <Badge variant={periodEnded ? "destructive" : "outline"} className="ml-1.5">
+                            {periodEnded ? "Por liquidar" : "Estimado"}
+                          </Badge>
+                        ) : null}
+                      </span>
+                    )}
                     {payment.note && (
                       <span className="block max-w-48 truncate text-xs text-muted-foreground">
                         {payment.note}
@@ -114,6 +139,9 @@ export function PaymentsTable({ project, payments, today }: Props) {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center justify-end gap-1">
+                      {settle && payment.status === "expected" && project.monthly_fee_cop != null && (
+                        <SettleDialog projectName={project.name} fee={project.monthly_fee_cop} row={settle} />
+                      )}
                       {payment.status === "expected" && (
                         <Button
                           variant="ghost"

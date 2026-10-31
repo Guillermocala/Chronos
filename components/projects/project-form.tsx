@@ -24,6 +24,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { markInvalidField, showResult, useAction } from "@/hooks/use-action-toast";
 import type { Project } from "@/lib/data/projects";
+import { isMonthlyBilling } from "@/lib/billing/hours-settlement";
 import { BILLING_LABELS } from "@/lib/projects/labels";
 
 import { ConfirmProjectUpdateDialog } from "./confirm-project-update-dialog";
@@ -145,6 +146,7 @@ export function ProjectForm({ project }: { project?: Project }) {
               onValueChange={(value) => value[0] && setBilling(value[0] as Billing)}
               variant="outline"
               spacing={2}
+              className="flex-wrap"
             >
               {(Object.keys(BILLING_LABELS) as Billing[]).map((key) => (
                 <ToggleGroupItem key={key} value={key}>
@@ -212,10 +214,17 @@ export function ProjectForm({ project }: { project?: Project }) {
                   defaultValue={project?.billing_day ?? 1}
                 />
               </Field>
+              {billing === "hourly_adjusted" && (
+                <FieldDescription className="sm:col-span-2">
+                  Cada cuenta de cobro se recalcula con las horas reales: mensualidad ÷ horas por mes ×
+                  horas trabajadas entre el día de cobro anterior y el día antes del cobro. Si trabajas
+                  menos horas cobras menos; si trabajas más, cobras el excedente.
+                </FieldDescription>
+              )}
             </div>
           )}
 
-          {project && (billing === "retainer" || project.billing_type === "retainer") && (
+          {project && (isMonthlyBilling(billing) || isMonthlyBilling(project.billing_type)) && (
             <Field orientation="horizontal">
               <input type="hidden" name="sync_payments" value={syncPayments ? "1" : "0"} />
               <Checkbox

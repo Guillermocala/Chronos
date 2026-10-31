@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 import { PageHeader } from "@/components/page-header";
+import { HoursTab } from "@/components/projects/hours-tab";
 import { PaymentsTable } from "@/components/projects/payments-table";
 import { ProjectActions } from "@/components/projects/project-actions";
 import { SprintsList } from "@/components/projects/sprints-list";
@@ -16,10 +17,11 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { isMonthlyBilling, projectHourPeriods, toHourEntries } from "@/lib/billing/hours-settlement";
 import { todayCO } from "@/lib/dates";
 import { getProject, listProjectOptions } from "@/lib/data/projects";
 import { listProjectTasks } from "@/lib/data/tasks";
-import { getProjectHours, getRunningTimer, listProjectTickets } from "@/lib/data/tickets";
+import { getProjectHours, getRunningTimer, listProjectTickets, listProjectTimeEntries } from "@/lib/data/tickets";
 import { formatCOP, formatDate, formatHours, plural } from "@/lib/format";
 import { formatDuration } from "@/lib/time";
 import { BILLING_LABELS, phaseInfo } from "@/lib/projects/labels";
@@ -37,17 +39,29 @@ export default function ProjectPage({ params }: PageProps<"/projects/[id]">) {
 
 async function ProjectContent({ params }: Pick<PageProps<"/projects/[id]">, "params">) {
   const { id } = await params;
-  const [project, tasks, projects, tickets, hours, running] = await Promise.all([
+  const [project, tasks, projects, tickets, hours, running, timeEntries] = await Promise.all([
     getProject(id),
     listProjectTasks(id),
     listProjectOptions(),
     listProjectTickets(id),
     getProjectHours(id),
     getRunningTimer(),
+    listProjectTimeEntries(id),
   ]);
   if (!project) notFound();
 
   const today = todayCO();
+  const ops = project.billing_type === "hourly_adjusted";
+  const hourPeriods = projectHourPeriods({
+    project,
+    payments: project.payments,
+    entries: toHourEntries(timeEntries),
+    today,
+  });
+  // OPS: lo que daría cada mensualidad pendiente con las horas registradas hoy.
+  const settlements = ops
+    ? Object.fromEntries(hourPeriods.filter((r) => r.payment).map((r) => [r.payment!.id, r]))
+    : undefined;
   const { payments, sprints, ...fields } = project;
   const phase = phaseInfo(project, today);
   const value = contractValue(project);
@@ -111,6 +125,7 @@ async function ProjectContent({ params }: Pick<PageProps<"/projects/[id]">, "par
           <TabsList>
             <TabsTrigger value="summary">Resumen</TabsTrigger>
             <TabsTrigger value="tickets">Tickets ({tickets.length})</TabsTrigger>
+            <TabsTrigger value="hours">Horas</TabsTrigger>
             <TabsTrigger value="payments">Pagos ({payments.length})</TabsTrigger>
             <TabsTrigger value="sprints">Sprints ({sprints.length})</TabsTrigger>
             <TabsTrigger value="tasks">Tareas ({tasks.length})</TabsTrigger>
@@ -123,7 +138,7 @@ async function ProjectContent({ params }: Pick<PageProps<"/projects/[id]">, "par
               label="Valor del contrato"
               value={formatCOP(value)}
               hint={
-                project.billing_type === "retainer"
+                isMonthlyBilling(project.billing_type)
                   ? `${formatCOP(project.monthly_fee_cop)}/mes${project.contract_months ? ` × ${project.contract_months}` : ""}`
                   : undefined
               }
@@ -145,12 +160,12 @@ async function ProjectContent({ params }: Pick<PageProps<"/projects/[id]">, "par
             <StatCard
               label="Tarifa real"
               value={valuation.realRate !== null ? `${formatCOP(valuation.realRate)}/h` : "—"}
-              hint="cobrado ÷ horas de alcance y soporte"
+              hint="cobrado ÷ horas de alcance, soporte y directas"
             />
             <StatCard
               label="Horas registradas"
               value={formatDuration(valuation.loggedHours)}
-              hint={`alcance ${formatDuration(hours.scope_logged)}${hours.extra_logged > 0 ? ` · extra ${formatDuration(hours.extra_logged)}` : ""}`}
+              hint={`alcance ${formatDuration(hours.scope_logged)}${hours.direct_logged ? ` · directas ${formatDuration(hours.direct_logged)}` : ""}${hours.extra_logged > 0 ? ` · extra ${formatDuration(hours.extra_logged)}` : ""}`}
             />
             <StatCard
               label="Soporte absorbido"
@@ -164,9 +179,9 @@ async function ProjectContent({ params }: Pick<PageProps<"/projects/[id]">, "par
           </div>
           <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
             <SummaryRow
-              label={project.billing_type === "retainer" ? "Horas por mes" : "Horas estimadas"}
+              label={isMonthlyBilling(project.billing_type) ? "Horas por mes" : "Horas estimadas"}
               value={formatHours(
-                project.billing_type === "retainer"
+                isMonthlyBilling(project.billing_type)
                   ? project.expected_hours_per_month
                   : project.estimated_total_hours,
               )}
@@ -184,7 +199,7 @@ async function ProjectContent({ params }: Pick<PageProps<"/projects/[id]">, "par
                   : `Pendiente · ${project.support_days} días de soporte`
               }
             />
-            {project.billing_type === "retainer" && (
+            {isMonthlyBilling(project.billing_type) && (
               <SummaryRow label="Día de cobro" value={project.billing_day ? `Día ${project.billing_day}` : "—"} />
             )}
           </dl>
@@ -201,8 +216,19 @@ async function ProjectContent({ params }: Pick<PageProps<"/projects/[id]">, "par
           />
         </TabsContent>
 
+        <TabsContent value="hours" className="pt-4">
+          <HoursTab
+            projectId={project.id}
+            ops={ops}
+            fee={project.monthly_fee_cop}
+            rows={hourPeriods}
+            directEntries={timeEntries.filter((e) => e.ticket_id === null)}
+            today={today}
+          />
+        </TabsContent>
+
         <TabsContent value="payments" className="pt-4">
-          <PaymentsTable project={fields} payments={payments} today={today} />
+          <PaymentsTable project={fields} payments={payments} today={today} settlements={settlements} />
         </TabsContent>
 
         <TabsContent value="sprints" className="pt-4">
