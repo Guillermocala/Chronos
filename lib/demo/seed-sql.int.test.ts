@@ -27,7 +27,7 @@ describe("datos de prueba [DEMO]", () => {
 
   it("crea los cinco proyectos solo para ese usuario (RLS)", async () => {
     const mine = await asUser<{ code_prefix: string }>(db, U1, "select code_prefix from public.projects order by code_prefix");
-    expect(mine.map((p) => p.code_prefix)).toEqual(["DMFIX", "DMNEW", "DMOLD", "DMRET", "DMSOP"]);
+    expect(mine.map((p) => p.code_prefix)).toEqual(["DMFIX", "DMNEW", "DMOLD", "DMOPS", "DMRET", "DMSOP"]);
     expect(await asUser(db, U2, "select id from public.projects")).toEqual([]);
   });
 
@@ -65,7 +65,7 @@ describe("datos de prueba [DEMO]", () => {
     ).toBe(0);
 
     await db.exec(buildDemoSeedSql({ email: EMAIL, today: TODAY }));
-    expect(await count(db, "select count(*)::int as n from public.projects where deleted_at is null")).toBe(5);
+    expect(await count(db, "select count(*)::int as n from public.projects where deleted_at is null")).toBe(6);
   });
 
   it("falla con un email que no existe", async () => {

@@ -39,7 +39,10 @@ Chronos es un gestor personal de tickets, sprints y valor en COP por proyecto. L
 
 ## Diseño funcional (resumen)
 - **Proyectos:**
-  - facturación `fixed` (monto fijo) o `retainer` (mensualidad);
+  - tres modalidades de cobro (`billing_type`):
+    - `fixed`: monto total fijo;
+    - `retainer`: "Mensual fijo", la mensualidad no depende de las horas;
+    - `hourly_adjusted`: "Mensual por horas (OPS)", con mensualidad por N horas al mes; cada cuenta de cobro se liquida con las horas reales (ver **Liquidación OPS**);
   - fases `active` → `delivered`/`support` → `closed`;
   - ventana de soporte de 14 días por defecto;
   - enlace opcional a una carpeta de Drive.
@@ -60,7 +63,7 @@ Chronos es un gestor personal de tickets, sprints y valor en COP por proyecto. L
   - un solo `doc_url` opcional (un Doc o una carpeta de Drive);
   - origen opcional en una nota de reunión.
 - **Valor:** la tarifa estimada sale del monto o la mensualidad entre las horas. La tarifa real incluye las horas de soporte no facturable.
-  - **Tarifa real** = cobrado del contrato (sin pagos extra) ÷ (horas de alcance + soporte), en `projectValuation`.
+  - **Tarifa real** = cobrado del contrato (sin pagos extra) ÷ (horas de alcance + soporte + directas), en `projectValuation`.
   - **Valor por ticket** (`ticketValue`): alcance = horas × tarifa; soporte = 0, con costo de oportunidad; extra facturable = horas × tarifa.
 - **Tickets** (fase 3):
   - backlog por proyecto (pestaña Tickets);
@@ -69,8 +72,18 @@ Chronos es un gestor personal de tickets, sprints y valor en COP por proyecto. L
   - detalle en `/tickets/[id]`.
 - **Horas:**
   - cronómetro único por usuario (índice parcial en `time_entries`), visible arriba en todas las pantallas;
-  - registro manual ("1:30", "90m");
-  - las vistas `ticket_hours` y `project_hours` (`security_invoker`) suman las horas.
+  - registro manual ("1:30", "90m"), en un ticket o **directo al proyecto** (sin ticket: operación, reuniones);
+  - `time_entries.project_id` siempre está lleno: un trigger lo copia del ticket y, sin ticket, exige que el proyecto sea visible para quien registra (RLS);
+  - las vistas `ticket_hours` y `project_hours` (`security_invoker`) suman las horas; `project_hours.direct_logged` son las horas sin ticket;
+  - pestaña **Horas** del proyecto: horas por mes calendario (u horas por período de cobro en OPS), % frente a las horas pactadas y el registro directo.
+- **Liquidación OPS** (`lib/billing/hours-settlement.ts`):
+  - período de cada mensualidad: del día de cobro del mes anterior al día antes del cobro (cobro 28-nov → 28-oct a 27-nov);
+  - valor = mensualidad ÷ horas pactadas × horas reales, proporcional en ambos sentidos y sin tope;
+  - cuentan alcance, soporte y horas directas; los extras facturables no, porque se cobran aparte;
+  - las mensualidades se generan con la mensualidad completa ("Estimado"). Al terminar el período aparecen como "Por liquidar". "Liquidar" (`settleMonthlyPayment`) guarda el valor, el período, `settled_hours` y `settled_at`, y el trigger actualiza el seguimiento "Cobrar…";
+  - se puede volver a liquidar mientras el pago no esté recibido;
+  - al editar el contrato, las mensualidades liquidadas se respetan igual que las recibidas (`planMonthlySync`);
+  - "Copiar detalle" arma el texto de la cuenta de cobro.
 - **Extras:** "Cobrar como extra" marca el ticket `extra` facturable y crea un pago `extra` esperado con `payments.ticket_id`; el trigger agrega su seguimiento "Cobrar…".
 - **Tareas candidatas a ticket** (de los dictados) conservan `~Nh` en `tasks.estimated_hours`. "Convertir a ticket" crea el ticket y cierra la tarea.
 - **Granola:**

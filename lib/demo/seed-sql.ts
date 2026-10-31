@@ -6,11 +6,12 @@
 // Los seguimientos "Cobrar…", "Cerrar soporte…" y las tareas recurrentes los
 // crean los triggers y el generador de la base, igual que en la app.
 
+import { billingPeriod } from "@/lib/billing/hours-settlement";
 import { addDays, type ISODate } from "@/lib/dates";
 import { buildMonthlySchedule } from "@/lib/payments";
 
 export const DEMO_TAG = "[DEMO]";
-export const DEMO_PREFIXES = ["DMRET", "DMOLD", "DMNEW", "DMFIX", "DMSOP"] as const;
+export const DEMO_PREFIXES = ["DMRET", "DMOLD", "DMNEW", "DMFIX", "DMSOP", "DMOPS"] as const;
 
 const lit = (value: string) => `'${value.replace(/'/g, "''")}'`;
 const date = (iso: ISODate) => `${lit(iso)}::date`;
@@ -80,6 +81,31 @@ export function buildDemoSeedSql({ email, today }: { email: string; today: ISODa
   const sopStart = addDays(today, -90);
   const sopDelivered = addDays(today, -5);
 
+  // 6) OPS (mensual ajustado por horas): 160 h por $3.500.000, cobro el 28.
+  //    Un período cerrado con 120 h (cobra menos), otro con 176 h (cobra más) y el actual en curso.
+  const opsFee = 3_500_000;
+  const opsSchedule = buildMonthlySchedule({
+    start_date: shiftMonths(today, -3),
+    contract_months: 6,
+    monthly_fee_cop: opsFee,
+    billing_day: 28,
+  });
+  const pastHours = [176, 120];
+  const opsEntries: string[] = [];
+  for (const payment of [...opsSchedule].reverse()) {
+    const period = billingPeriod(payment.due_date!);
+    if (period.start > today) continue;
+    const total = period.end < today ? (pastHours.pop() ?? 0) : 24;
+    for (let i = 0; i * 8 < total; i++) {
+      const day = addDays(period.start, i);
+      if (day > today || day > period.end) break;
+      opsEntries.push(`(v_uid, p_ops, ${ts(day, 8)}, ${ts(day, 8)}, ${Math.min(8, total - i * 8)}, 'Operación diaria')`);
+    }
+  }
+  const opsPayments = opsSchedule.map(
+    (p) => `(v_uid, p_ops, 'monthly', ${opsFee}, 'expected', ${date(p.due_date!)}, null)`,
+  );
+
   return `-- Datos de prueba ${DEMO_TAG} para ${email} (generado para ${today}).
 -- Se retiran con: npm run db:seed-demo -- --email ${email} --reset --apply
 begin;
@@ -87,7 +113,7 @@ begin;
 do $seed$
 declare
   v_uid uuid;
-  p_ret uuid; p_old uuid; p_new uuid; p_fix uuid; p_sop uuid;
+  p_ret uuid; p_old uuid; p_new uuid; p_fix uuid; p_sop uuid; p_ops uuid;
   s1 uuid; s2 uuid; s3 uuid; s_sup uuid;
   t1 uuid; t2 uuid; t3 uuid; t4 uuid; t5 uuid; t_sop uuid;
   n1 uuid;
@@ -240,6 +266,23 @@ begin
   insert into public.time_entries (user_id, ticket_id, started_at, ended_at, hours) values
     (v_uid, t_sop, ${ts(addDays(today, -1), 10)}, ${ts(addDays(today, -1), 11)}, 1);
 
+  -- 6) OPS: mensual ajustado por horas -----------------------------------------
+  insert into public.projects (user_id, name, client, code_prefix, color, billing_type, monthly_fee_cop,
+                               expected_hours_per_month, contract_months, billing_day, start_date)
+  values (v_uid, '${DEMO_TAG} OPS por horas', 'Operaciones Demo', 'DMOPS', '#f59e0b', 'hourly_adjusted', ${opsFee},
+          160, 6, 28, ${date(shiftMonths(today, -3))})
+  returning id into p_ops;
+
+  insert into public.payments (user_id, project_id, kind, amount_cop, status, due_date, paid_at) values
+    ${opsPayments.join(",\n    ")};
+${
+  opsEntries.length
+    ? `
+  insert into public.time_entries (user_id, project_id, started_at, ended_at, hours, note) values
+    ${opsEntries.join(",\n    ")};
+`
+    : ""
+}
   -- Tareas recurrentes de hoy (lo mismo que hace pg_cron cada mañana).
   perform private.generate_recurring_tasks(v_uid, ${date(today)});
 end
@@ -271,9 +314,9 @@ begin
     from public.projects
    where user_id = v_uid and name like ${lit(`${DEMO_TAG}%`)} and deleted_at is null;
 
+  -- Con ticket o directas al proyecto: todas llevan project_id.
   update public.time_entries set deleted_at = v_now
-   where user_id = v_uid and deleted_at is null
-     and ticket_id in (select id from public.tickets where project_id = any (v_projects));
+   where user_id = v_uid and deleted_at is null and project_id = any (v_projects);
 
   update public.note_action_items set deleted_at = v_now
    where user_id = v_uid and deleted_at is null
