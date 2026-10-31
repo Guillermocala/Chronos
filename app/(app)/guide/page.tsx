@@ -36,6 +36,7 @@ import {
   myDayTemplate,
   type SectionType,
 } from "@/lib/granola/conventions";
+import { VOICE_EXAMPLES } from "@/lib/voice/vocabulary";
 
 export const metadata: Metadata = { title: "Guía de dictado · Chronos" };
 
@@ -54,8 +55,32 @@ export default function GuidePage() {
     <>
       <PageHeader
         title="Guía de dictado"
-        description="Cómo dictarle a Granola tus tareas para que Chronos las entienda al importarlas."
+        description="Cómo dictar tus tareas, directamente en Chronos o en Granola, para que se creen con proyecto, fecha y horas."
       />
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Dictar en Chronos</CardTitle>
+          <CardDescription>
+            Usa el botón “Dictar” en Hoy, en un proyecto o en Importar dictado (Chrome, Edge o
+            Safari). Habla natural: cada pausa larga o “luego / después / también” separa un ítem.
+            Antes de crear, revisas y corriges todo.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3">
+          {VOICE_EXAMPLES.map((example) => (
+            <div key={example.spoken} className="flex flex-col gap-1 rounded-lg border p-3">
+              <span className="text-sm">“{example.spoken}”</span>
+              <span className="text-xs text-muted-foreground">→ {example.result}</span>
+            </div>
+          ))}
+          <p className="text-xs text-muted-foreground">
+            Duraciones: “dos horas”, “hora y media”, “media hora”, “45 minutos”. Fechas: “mañana”,
+            “el viernes”, “el 25 de octubre”, “en tres días”. Prioridad: “urgente”, “prioridad
+            alta”. Proyecto: “del proyecto web” o su prefijo. Seguimientos: “esperando a Ana”.
+          </p>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

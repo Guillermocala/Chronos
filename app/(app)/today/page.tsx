@@ -9,6 +9,7 @@ import { ProjectBadge } from "@/components/tasks/project-badge";
 import { QuickAddDialog } from "@/components/tasks/quick-add-dialog";
 import { TimerButton } from "@/components/tickets/timer-button";
 import { TaskList } from "@/components/tasks/task-list";
+import { VoiceDictation } from "@/components/voice/voice-dictation";
 import { Badge } from "@/components/ui/badge";
 import {
   Empty,
@@ -25,6 +26,7 @@ import { listTodayCandidates } from "@/lib/data/tasks";
 import { getRunningTimer, listTicketsInProgress } from "@/lib/data/tickets";
 import { formatCOP, plural } from "@/lib/format";
 import { groupTodayTasks, TODAY_GROUPS } from "@/lib/tasks/today";
+import { formatDuration } from "@/lib/time";
 import { paymentTotals } from "@/lib/valuation";
 
 export const metadata: Metadata = { title: "Hoy · Chronos" };
@@ -57,8 +59,10 @@ async function TodayContent({ searchParams }: Pick<PageProps<"/today">, "searchP
     getRunningTimer(),
   ]);
 
+  const params = await searchParams;
   const groups = groupTodayTasks(tasks, today);
   const pendingCount = Object.values(groups).reduce((n, g) => n + g.length, 0);
+  const myDayHours = groups.myDay.reduce((sum, t) => sum + (t.estimated_hours ?? 0), 0);
 
   const totals = paymentTotals(payments, today);
   const committedThisMonth = payments
@@ -79,7 +83,17 @@ async function TodayContent({ searchParams }: Pick<PageProps<"/today">, "searchP
             {dateLabel} · {pendingCount === 0 ? "sin pendientes" : `${pendingCount} pendientes`}
           </span>
         }
-        actions={<QuickAddDialog defaultMyDay defaultOpen={(await searchParams).add === "1"} />}
+        actions={
+          <div className="flex items-center gap-2">
+            <VoiceDictation
+              projects={projects}
+              today={today}
+              defaultMyDay
+              defaultOpen={params.dictate === "1"}
+            />
+            <QuickAddDialog defaultMyDay defaultOpen={params.add === "1"} />
+          </div>
+        }
       />
 
       {inProgress.length > 0 && (
@@ -127,6 +141,11 @@ async function TodayContent({ searchParams }: Pick<PageProps<"/today">, "searchP
                 <Badge variant={group.key === "overdue" ? "destructive" : "secondary"}>
                   {groups[group.key].length}
                 </Badge>
+                {group.key === "myDay" && myDayHours > 0 && (
+                  <span className="text-xs text-muted-foreground">
+                    {formatDuration(myDayHours)} estimadas
+                  </span>
+                )}
               </div>
               <TaskList tasks={groups[group.key]} today={today} projects={projects} />
             </section>

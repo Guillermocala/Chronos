@@ -10,6 +10,7 @@ import { SprintsList } from "@/components/projects/sprints-list";
 import { Backlog } from "@/components/tickets/backlog";
 import { StatCard } from "@/components/stat-card";
 import { QuickAddDialog } from "@/components/tasks/quick-add-dialog";
+import { VoiceDictation } from "@/components/voice/voice-dictation";
 import { TaskList } from "@/components/tasks/task-list";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -215,8 +216,9 @@ async function ProjectContent({ params }: Pick<PageProps<"/projects/[id]">, "par
         </TabsContent>
 
         <TabsContent value="tasks" className="flex flex-col gap-3 pt-4">
-          <div>
+          <div className="flex items-center gap-2">
             <QuickAddDialog projectId={project.id} />
+            <VoiceDictation projects={projects} today={today} defaultProjectId={project.id} />
           </div>
           {tasks.length === 0 ? (
             <p className="text-sm text-muted-foreground">Sin tareas ni seguimientos abiertos.</p>

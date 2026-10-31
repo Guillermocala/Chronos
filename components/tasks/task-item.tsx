@@ -36,6 +36,7 @@ import { useAction } from "@/hooks/use-action-toast";
 import { daysBetween, type ISODate } from "@/lib/dates";
 import type { TaskWithProject } from "@/lib/data/tasks";
 import { relativeDay } from "@/lib/format";
+import { formatDuration } from "@/lib/time";
 import { cn } from "@/lib/utils";
 
 import { DocLink } from "./doc-link";
@@ -100,11 +101,12 @@ export function TaskItem({ task, today, projects }: Props) {
             </Badge>
           )}
           {inMyDay && !done && <Badge variant="secondary">Mi día</Badge>}
-          {task.is_ticket_candidate && (
-            <Badge variant="outline">
-              Convertir a ticket{task.estimated_hours != null && ` · ~${task.estimated_hours} h`}
+          {task.estimated_hours != null && (
+            <Badge variant="outline" title="Horas estimadas">
+              ~{formatDuration(task.estimated_hours)}
             </Badge>
           )}
+          {task.is_ticket_candidate && <Badge variant="outline">Convertir a ticket</Badge>}
           {task.recurring_task_id && (
             <Link href="/tasks?view=recurring" className="hover:underline" title="Tarea recurrente">
               ↻ Recurrente
