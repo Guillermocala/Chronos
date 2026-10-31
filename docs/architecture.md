@@ -12,6 +12,7 @@ Chronos es un gestor personal de tickets, sprints y valor en COP por proyecto. L
 [GitHub Actions] ── backup semanal / manual ──► repo privado chronos-backups (JSON + resumen.md)
 [Google Drive] ── solo enlaces guardados en los tickets (sin API)
 [Granola] ── notas exportadas en .md → importación en Chronos
+[Navegador] ── Web Speech API (voz → texto en el cliente) → dictado en Chronos
 ```
 
 ## Repositorios
@@ -78,7 +79,14 @@ Chronos es un gestor personal de tickets, sprints y valor en COP por proyecto. L
     - marcadores `@PREFIJO`, `!fecha`, `#prioridad`, `~3h`, `(esperando: X)` y enlaces de Drive;
   - el parser está en `lib/granola/parse.ts`; "+ Tarea" acepta los mismos marcadores;
   - `/guide` tiene las instrucciones para Granola, las plantillas y un probador;
-  - `/import` muestra una vista previa editable, guarda la nota en `meeting_notes` y crea los ítems. Las líneas de Tickets quedan como tareas `is_ticket_candidate` hasta la fase de tickets.
+  - `/import` muestra una vista previa editable (`components/granola/dictation-review.tsx`, compartida con el dictado por voz), guarda la nota en `meeting_notes` y crea los ítems. Las líneas de Tickets quedan como tareas `is_ticket_candidate` hasta la fase de tickets.
+- **Dictado por voz en Chronos** (costo 0, todo en el navegador):
+  - `hooks/use-speech-recognition.ts` usa la Web Speech API (`es-CO`). El audio lo procesa el navegador (Google en Chrome/Edge, Apple en Safari), nunca Vercel. Firefox no la soporta: el panel deja escribir el texto;
+  - `lib/voice/normalize.ts` convierte lenguaje hablado en los marcadores de Granola ("dos horas" → `~2h`, "del proyecto web" → `@WEB`, "el viernes" → `!viernes`) y `parseLine` los interpreta. El vocabulario y los ejemplos de la guía viven en `lib/voice/vocabulary.ts` (con test de sincronía);
+  - `components/voice/voice-dictation.tsx`: hoja inferior en el celular (< 768 px), diálogo en escritorio; pasos Dictar → Revisar bajo 1024 px y lado a lado desde 1024 px;
+  - está en Hoy (entra a Mi día; `/today?dictate=1` lo abre), Proyecto → Tareas (proyecto preasignado) e Importar ("Dictar aquí");
+  - guarda con `importDictation` y `source = 'voice'` en `meeting_notes`. Hoy muestra el total estimado de Mi día y cada tarea su `~N h`;
+  - pendiente para la PWA: atajo "Dictar" en el manifest y verificar el permiso de micrófono en modo instalado.
 - **Reportes** (fase 5):
   - `/reports`: cobros por mes, horas por semana, horas y tarifa por proyecto. Usa Recharts mediante el `chart` de shadcn, con los colores `--chart-1..5` validados con la skill dataviz y una tabla equivalente debajo de cada gráfica;
   - burndown en el tablero del sprint;
