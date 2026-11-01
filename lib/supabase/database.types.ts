@@ -199,9 +199,9 @@ export type Database = {
           period_end: string | null
           period_start: string | null
           project_id: string
-          status: Database["public"]["Enums"]["payment_status"]
           settled_at: string | null
           settled_hours: number | null
+          status: Database["public"]["Enums"]["payment_status"]
           ticket_id: string | null
           updated_at: string
           user_id: string
@@ -218,9 +218,9 @@ export type Database = {
           period_end?: string | null
           period_start?: string | null
           project_id: string
-          status?: Database["public"]["Enums"]["payment_status"]
           settled_at?: string | null
           settled_hours?: number | null
+          status?: Database["public"]["Enums"]["payment_status"]
           ticket_id?: string | null
           updated_at?: string
           user_id?: string
@@ -237,9 +237,9 @@ export type Database = {
           period_end?: string | null
           period_start?: string | null
           project_id?: string
-          status?: Database["public"]["Enums"]["payment_status"]
           settled_at?: string | null
           settled_hours?: number | null
+          status?: Database["public"]["Enums"]["payment_status"]
           ticket_id?: string | null
           updated_at?: string
           user_id?: string
@@ -828,22 +828,7 @@ export type Database = {
           scope_logged: number | null
           support_logged: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "tickets_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "project_last_change"
-            referencedColumns: ["project_id"]
-          },
-          {
-            foreignKeyName: "tickets_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "projects"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       project_last_change: {
         Row: {
