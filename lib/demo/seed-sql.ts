@@ -338,6 +338,10 @@ begin
   update public.payments set deleted_at = v_now
    where user_id = v_uid and deleted_at is null and project_id = any (v_projects);
 
+  -- Mapeos de "Cargar datos" que apuntan a proyectos ${DEMO_TAG}.
+  update public.external_project_links set deleted_at = v_now
+   where user_id = v_uid and deleted_at is null and project_id = any (v_projects);
+
   update public.sprints set deleted_at = v_now
    where user_id = v_uid and deleted_at is null and project_id = any (v_projects);
 

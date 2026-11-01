@@ -97,9 +97,19 @@ Chronos es un gestor personal de tickets, sprints y valor en COP por proyecto. L
   - `hooks/use-speech-recognition.ts` usa la Web Speech API (`es-CO`). El audio lo procesa el navegador (Google en Chrome/Edge, Apple en Safari), nunca Vercel. Firefox no la soporta: el panel deja escribir el texto;
   - `lib/voice/normalize.ts` convierte lenguaje hablado en los marcadores de Granola ("dos horas" → `~2h`, "del proyecto web" → `@WEB`, "el viernes" → `!viernes`) y `parseLine` los interpreta. El vocabulario y los ejemplos de la guía viven en `lib/voice/vocabulary.ts` (con test de sincronía);
   - `components/voice/voice-dictation.tsx`: hoja inferior en el celular (< 768 px), diálogo en escritorio; pasos Dictar → Revisar bajo 1024 px y lado a lado desde 1024 px;
-  - está en Hoy (entra a Mi día; `/today?dictate=1` lo abre), Proyecto → Tareas (proyecto preasignado) e Importar ("Dictar aquí");
+  - está en Hoy (entra a Mi día; `/today?dictate=1` lo abre), Tareas (lo que no tiene fecha va a la bandeja), Proyecto → Tareas (proyecto preasignado) e Importar ("Dictar aquí");
   - guarda con `importDictation` y `source = 'voice'` en `meeting_notes`. Hoy muestra el total estimado de Mi día y cada tarea su `~N h`;
   - pendiente para la PWA: atajo "Dictar" en el manifest y verificar el permiso de micrófono en modo instalado.
+- **Cargar datos de otras plataformas** (Importar → "Cargar datos", o "Cargar datos ▾" en Tareas; `/import?tab=data&format=leden`):
+  - Chronos es la fuente principal; la plataforma empresarial (Leden Company) es de soporte. Su "Informe de actividad" en PDF se carga para tener las mismas actividades y horas en ambos lados;
+  - el PDF se lee en el navegador con `pdfjs-dist` (`lib/import/pdf-text.ts`, worker propio con `new Worker(new URL(...))`). El lector puro `lib/import/leden/parse.ts` arma las columnas por la posición x de los encabezados, une textos partidos en varias líneas y compara con el TOTAL y los "N registros" del informe;
+  - formatos en `lib/import/formats.ts` (uno nuevo = un lector + una entrada);
+  - cada registro → tarea `done` con `completed_at` en su fecha (12:00 Colombia) + `time_entries` directa al proyecto con `task_id`. Etiquetas: `leden`, el tipo (`reunion`, `produccion-entregable`…) y la etiqueta entre corchetes del descriptor (`[INICIATIVA ORIÓN]` → `iniciativa-orion`);
+  - huella `tasks.external_source` + `external_id` (fecha|proyecto|horas|descripción normalizados, `#n` para idénticos) con índice único parcial: recargar un informe solo crea lo nuevo; borrar la tarea permite volver a cargarla. Si el registro se edita en Leden cambia la huella y entra como nuevo;
+  - `external_project_links` recuerda el proyecto de Chronos de cada proyecto externo (va en el backup del proyecto);
+  - la carga es atómica: RPC `import_external_activities` (security invoker) crea una nota `source = 'leden'` con la tabla resumen y las tareas y horas;
+  - los registros no facturables quedan desmarcados por defecto para no sumar en la liquidación OPS;
+  - borrar una tarea borra sus horas ligadas, y "Deshacer" las restaura.
 - **Reportes** (fase 5):
   - `/reports`: cobros por mes, horas por semana, horas y tarifa por proyecto. Usa Recharts mediante el `chart` de shadcn, con los colores `--chart-1..5` validados con la skill dataviz y una tabla equivalente debajo de cada gráfica;
   - burndown en el tablero del sprint;

@@ -34,7 +34,7 @@ export async function collectProject(db: Db, projectId: string): Promise<Project
   const by = (table: string, column = "project_id") =>
     rows(db, `select to_jsonb(t) as row from public.${table} t where t.${column} = $1`, [projectId]);
 
-  const [project, payments, sprints, tickets, tasks, notes, recurring] = await Promise.all([
+  const [project, payments, sprints, tickets, tasks, notes, recurring, external_links] = await Promise.all([
     by("projects", "id"),
     by("payments"),
     by("sprints"),
@@ -42,6 +42,7 @@ export async function collectProject(db: Db, projectId: string): Promise<Project
     by("tasks"),
     by("meeting_notes"),
     by("recurring_tasks"),
+    by("external_project_links"),
   ]);
   const [time_entries, action_items] = await Promise.all([
     rows(
@@ -56,7 +57,7 @@ export async function collectProject(db: Db, projectId: string): Promise<Project
       [projectId],
     ),
   ]);
-  return { project, payments, sprints, tickets, time_entries, tasks, notes, action_items, recurring };
+  return { project, payments, sprints, tickets, time_entries, tasks, notes, action_items, recurring, external_links };
 }
 
 /** Tareas, notas y reglas recurrentes sin proyecto (siempre se exportan: son pocas). */

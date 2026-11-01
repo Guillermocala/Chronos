@@ -7,10 +7,12 @@ export const RESTORE_ORDER = [
   "meeting_notes",
   "tickets",
   "payments",
-  "time_entries",
   "note_action_items",
   "recurring_tasks",
   "tasks",
+  // Después de tasks: las horas pueden estar ligadas a una tarea.
+  "time_entries",
+  "external_project_links",
 ] as const;
 export type RestoreTable = (typeof RESTORE_ORDER)[number];
 

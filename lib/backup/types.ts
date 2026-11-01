@@ -18,6 +18,7 @@ export const PROJECT_FILES = [
   "notes",
   "action_items",
   "recurring",
+  "external_links",
 ] as const;
 export type ProjectFile = (typeof PROJECT_FILES)[number];
 
@@ -38,6 +39,7 @@ export const FILE_TABLE: Record<ProjectFile, string> = {
   notes: "meeting_notes",
   action_items: "note_action_items",
   recurring: "recurring_tasks",
+  external_links: "external_project_links",
 };
 
 export type ManifestEntry = {
