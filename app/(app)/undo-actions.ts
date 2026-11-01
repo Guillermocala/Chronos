@@ -28,8 +28,32 @@ export async function restoreDeleted(
   const parsed = undoSchema.safeParse({ table, id });
   if (!parsed.success) return fail("No se puede deshacer.");
 
-  const { error } = await supabase.from(parsed.data.table).update({ deleted_at: null }).eq("id", parsed.data.id);
+  const { data: restored, error } = await supabase
+    .from(parsed.data.table)
+    .update({ deleted_at: null })
+    .eq("id", parsed.data.id)
+    .select("id")
+    .maybeSingle();
   if (error) return fail("No se pudo deshacer.");
+
+  // Una tarea con horas ligadas: se restauran las que se borraron con ella.
+  if (restored && parsed.data.table === "tasks") {
+    const { data: latest } = await supabase
+      .from("time_entries")
+      .select("deleted_at")
+      .eq("task_id", parsed.data.id)
+      .not("deleted_at", "is", null)
+      .order("deleted_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (latest?.deleted_at) {
+      await supabase
+        .from("time_entries")
+        .update({ deleted_at: null })
+        .eq("task_id", parsed.data.id)
+        .eq("deleted_at", latest.deleted_at);
+    }
+  }
   revalidatePath("/", "layout");
   return ok("Restaurado.");
 }

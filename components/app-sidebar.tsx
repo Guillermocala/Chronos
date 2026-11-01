@@ -58,7 +58,7 @@ const NAV: { label: string; items: NavItem[] }[] = [
     label: "Granola",
     items: [
       { href: "/notes", label: "Notas", icon: NotebookTextIcon },
-      { href: "/import", label: "Importar dictado", icon: ImportIcon },
+      { href: "/import", label: "Importar", icon: ImportIcon },
       { href: "/guide", label: "Guía de dictado", icon: BookOpenIcon },
     ],
   },

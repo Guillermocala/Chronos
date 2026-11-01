@@ -2,6 +2,7 @@ import { InboxIcon } from "lucide-react";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
+import { LoadDataMenu } from "@/components/import/load-data-menu";
 import { PageHeader } from "@/components/page-header";
 import { QuickAddDialog } from "@/components/tasks/quick-add-dialog";
 import { RecurringList } from "@/components/tasks/recurring-list";
@@ -40,6 +41,7 @@ export default function TasksPage({ searchParams }: PageProps<"/tasks">) {
         description="Pendientes y seguimientos de todos tus proyectos y de lo personal."
         actions={
           <div className="flex items-center gap-2">
+            <LoadDataMenu />
             <Suspense fallback={null}>
               <TasksDictation />
             </Suspense>

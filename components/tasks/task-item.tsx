@@ -8,6 +8,7 @@ import {
   HourglassIcon,
   PencilIcon,
   TicketIcon,
+  TimerIcon,
   Trash2Icon,
 } from "lucide-react";
 import Link from "next/link";
@@ -56,6 +57,9 @@ export function TaskItem({ task, today, projects }: Props) {
   const overdue = !done && task.due_date !== null && daysBetween(task.due_date, today) > 0;
   const inMyDay = task.planned_on !== null && daysBetween(task.planned_on, today) >= 0;
   const waitingDays = daysBetween(task.created_at.slice(0, 10), today);
+  const loggedHours = (task.logged ?? [])
+    .filter((e) => e.deleted_at === null)
+    .reduce((sum, e) => sum + Number(e.hours ?? 0), 0);
 
   return (
     <li
@@ -104,6 +108,12 @@ export function TaskItem({ task, today, projects }: Props) {
           {task.estimated_hours != null && (
             <Badge variant="outline" title="Horas estimadas">
               ~{formatDuration(task.estimated_hours)}
+            </Badge>
+          )}
+          {loggedHours > 0 && (
+            <Badge variant="secondary" title="Horas registradas">
+              <TimerIcon data-icon="inline-start" />
+              {formatDuration(loggedHours)}
             </Badge>
           )}
           {task.is_ticket_candidate && <Badge variant="outline">Convertir a ticket</Badge>}

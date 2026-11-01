@@ -131,11 +131,16 @@ export async function snoozeTask(id: string, days: number): Promise<ActionResult
 export async function deleteTask(id: string): Promise<ActionResult> {
   const { supabase } = await requireUser();
   if (!idSchema.safeParse(id).success) return fail("Tarea inválida.");
-  const { error } = await supabase
-    .from("tasks")
-    .update({ deleted_at: new Date().toISOString() })
-    .eq("id", id);
+  const deletedAt = new Date().toISOString();
+  const { error } = await supabase.from("tasks").update({ deleted_at: deletedAt }).eq("id", id);
   if (error) return fail("No se pudo eliminar la tarea.");
+  // Las horas ligadas (actividades cargadas) se van con la tarea; mismo instante
+  // para que "Deshacer" las restaure juntas.
+  await supabase
+    .from("time_entries")
+    .update({ deleted_at: deletedAt })
+    .eq("task_id", id)
+    .is("deleted_at", null);
   refresh();
   return ok("Tarea eliminada.");
 }

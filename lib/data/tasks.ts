@@ -9,9 +9,11 @@ import type { TaskView } from "./task-views";
 
 export type TaskWithProject = Tables<"tasks"> & {
   project: { id: string; name: string; code_prefix: string; color: string | null } | null;
+  /** Horas registradas a la tarea (actividades cargadas); incluye borradas, filtrar por deleted_at. */
+  logged?: { hours: number | null; deleted_at: string | null }[];
 };
 
-const TASK_SELECT = "*, project:projects(id, name, code_prefix, color)";
+const TASK_SELECT = "*, project:projects(id, name, code_prefix, color), logged:time_entries(hours, deleted_at)";
 
 export { TASK_VIEWS, type TaskView } from "./task-views";
 
