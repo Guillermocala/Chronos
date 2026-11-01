@@ -15,6 +15,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
+import { VoiceDictation } from "@/components/voice/voice-dictation";
 import { requireUser } from "@/lib/auth";
 import { todayCO } from "@/lib/dates";
 import { listProjectOptions } from "@/lib/data/projects";
@@ -37,13 +38,27 @@ export default function TasksPage({ searchParams }: PageProps<"/tasks">) {
       <PageHeader
         title="Tareas"
         description="Pendientes y seguimientos de todos tus proyectos y de lo personal."
-        actions={<QuickAddDialog />}
+        actions={
+          <div className="flex items-center gap-2">
+            <Suspense fallback={null}>
+              <TasksDictation />
+            </Suspense>
+            <QuickAddDialog />
+          </div>
+        }
       />
       <Suspense fallback={<Skeleton className="h-64 w-full" />}>
         <TasksContent searchParams={searchParams} />
       </Suspense>
     </>
   );
+}
+
+/** Dictado por voz: lo dictado sin fecha cae en la bandeja de entrada. */
+async function TasksDictation() {
+  await requireUser();
+  const projects = await listProjectOptions();
+  return <VoiceDictation projects={projects} today={todayCO()} />;
 }
 
 function param(value: string | string[] | undefined) {
