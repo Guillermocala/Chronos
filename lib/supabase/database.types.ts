@@ -68,6 +68,54 @@ export type Database = {
         }
         Relationships: []
       }
+      external_project_links: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          external_name: string
+          id: string
+          project_id: string
+          source: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          external_name: string
+          id?: string
+          project_id: string
+          source: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          external_name?: string
+          id?: string
+          project_id?: string
+          source?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "external_project_links_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_last_change"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "external_project_links_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meeting_notes: {
         Row: {
           attendees: string[]
@@ -513,6 +561,8 @@ export type Database = {
           doc_url: string | null
           due_date: string | null
           estimated_hours: number | null
+          external_id: string | null
+          external_source: string | null
           id: string
           is_ticket_candidate: boolean
           kind: Database["public"]["Enums"]["task_kind"]
@@ -540,6 +590,8 @@ export type Database = {
           doc_url?: string | null
           due_date?: string | null
           estimated_hours?: number | null
+          external_id?: string | null
+          external_source?: string | null
           id?: string
           is_ticket_candidate?: boolean
           kind?: Database["public"]["Enums"]["task_kind"]
@@ -567,6 +619,8 @@ export type Database = {
           doc_url?: string | null
           due_date?: string | null
           estimated_hours?: number | null
+          external_id?: string | null
+          external_source?: string | null
           id?: string
           is_ticket_candidate?: boolean
           kind?: Database["public"]["Enums"]["task_kind"]
@@ -754,6 +808,7 @@ export type Database = {
           note: string | null
           project_id: string | null
           started_at: string
+          task_id: string | null
           ticket_id: string | null
           updated_at: string
           user_id: string
@@ -767,6 +822,7 @@ export type Database = {
           note?: string | null
           project_id?: string | null
           started_at?: string
+          task_id?: string | null
           ticket_id?: string | null
           updated_at?: string
           user_id?: string
@@ -780,11 +836,19 @@ export type Database = {
           note?: string | null
           project_id?: string | null
           started_at?: string
+          task_id?: string | null
           ticket_id?: string | null
           updated_at?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "time_entries_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "time_entries_project_id_fkey"
             columns: ["project_id"]
@@ -890,6 +954,10 @@ export type Database = {
         Returns: string
       }
       generate_my_recurring_tasks: { Args: never; Returns: number }
+      import_external_activities: {
+        Args: { p_links: Json; p_note: Json; p_rows: Json; p_source: string }
+        Returns: Json
+      }
       next_occurrence: {
         Args: {
           d: string
@@ -908,7 +976,7 @@ export type Database = {
       backup_trigger: "scheduled" | "manual"
       billing_type: "fixed" | "retainer" | "hourly_adjusted"
       doc_kind: "doc" | "sheet" | "slides" | "folder" | "file"
-      note_source: "granola" | "manual" | "voice"
+      note_source: "granola" | "manual" | "voice" | "leden"
       payment_kind: "advance" | "partial" | "final" | "monthly" | "extra"
       payment_status: "expected" | "received"
       project_phase: "active" | "delivered" | "support" | "closed"
@@ -1051,7 +1119,7 @@ export const Constants = {
       backup_trigger: ["scheduled", "manual"],
       billing_type: ["fixed", "retainer", "hourly_adjusted"],
       doc_kind: ["doc", "sheet", "slides", "folder", "file"],
-      note_source: ["granola", "manual", "voice"],
+      note_source: ["granola", "manual", "voice", "leden"],
       payment_kind: ["advance", "partial", "final", "monthly", "extra"],
       payment_status: ["expected", "received"],
       project_phase: ["active", "delivered", "support", "closed"],
