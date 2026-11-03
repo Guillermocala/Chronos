@@ -1,7 +1,10 @@
 // Resultado uniforme de las Server Actions, para mostrar avisos en el cliente.
 
+/** Celebración visual tras la acción (Misiones): pequeña o grande (confeti). */
+export type Celebration = "small" | "big";
+
 export type ActionResult =
-  | { ok: true; message?: string; warnings?: string[] }
+  | { ok: true; message?: string; warnings?: string[]; description?: string; celebrate?: Celebration }
   | { ok: false; error: string; field?: string };
 
 export function ok(message?: string, warnings?: string[]): ActionResult {

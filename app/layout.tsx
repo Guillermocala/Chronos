@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import { RegisterServiceWorker } from "@/components/pwa/register-sw";
+import { CelebrationLayer } from "@/components/quests/celebration";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/toast";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -72,6 +73,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           </Toaster>
         </ThemeProvider>
         <RegisterServiceWorker />
+        <CelebrationLayer />
       </body>
     </html>
   );

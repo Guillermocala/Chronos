@@ -141,6 +141,18 @@
   }
 }
 
+/* Misiones: confeti al completar (components/quests/celebration.tsx). */
+@keyframes confetti-fall {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(var(--confetti-dx), 105vh, 0) rotate(var(--confetti-rot));
+    opacity: 0.2;
+  }
+}
+
 /* Respeta "reducir movimiento" del sistema (skeletons, diálogos, kanban). */
 @media (prefers-reduced-motion: reduce) {
   *,

@@ -24,7 +24,15 @@ export type ProjectFile = (typeof PROJECT_FILES)[number];
 
 export type ProjectBundle = Record<ProjectFile, Row[]>;
 
-export const GLOBAL_FILES = ["tasks", "notes", "action_items", "recurring"] as const;
+export const GLOBAL_FILES = [
+  "tasks",
+  "notes",
+  "action_items",
+  "recurring",
+  "quest_settings",
+  "quest_goals",
+  "quest_achievements",
+] as const;
 export type GlobalFile = (typeof GLOBAL_FILES)[number];
 export type GlobalBundle = Record<GlobalFile, Row[]>;
 

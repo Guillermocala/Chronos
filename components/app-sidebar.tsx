@@ -9,6 +9,7 @@ import {
   NotebookTextIcon,
   SettingsIcon,
   SunIcon,
+  SwordsIcon,
   type LucideIcon,
 } from "lucide-react";
 import Image from "next/image";
@@ -45,6 +46,7 @@ const NAV: { label: string; items: NavItem[] }[] = [
     items: [
       { href: "/today", label: "Hoy", icon: SunIcon },
       { href: "/tasks", label: "Tareas", icon: ListTodoIcon },
+      { href: "/quests", label: "Misiones", icon: SwordsIcon },
     ],
   },
   {

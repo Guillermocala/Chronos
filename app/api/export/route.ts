@@ -14,6 +14,10 @@ const TABLES = [
   "meeting_notes",
   "note_action_items",
   "recurring_tasks",
+  "external_project_links",
+  "quest_settings",
+  "quest_goals",
+  "quest_achievements",
 ] as const;
 
 export async function GET() {

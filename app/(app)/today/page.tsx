@@ -22,6 +22,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { requireUser } from "@/lib/auth";
 import { todayCO } from "@/lib/dates";
 import { listAllPayments, listProjectOptions } from "@/lib/data/projects";
+import { getTaskRewards } from "@/lib/data/quests";
 import { listTodayCandidates } from "@/lib/data/tasks";
 import { getRunningTimer, listTicketsInProgress } from "@/lib/data/tickets";
 import { formatCOP, plural } from "@/lib/format";
@@ -63,6 +64,8 @@ async function TodayContent({ searchParams }: Pick<PageProps<"/today">, "searchP
   const groups = groupTodayTasks(tasks, today);
   const pendingCount = Object.values(groups).reduce((n, g) => n + g.length, 0);
   const myDayHours = groups.myDay.reduce((sum, t) => sum + (t.estimated_hours ?? 0), 0);
+  // Misiones: chip "+$X" en lo que se juega hoy.
+  const rewards = await getTaskRewards([...groups.overdue, ...groups.myDay, ...groups.dueToday]);
 
   const totals = paymentTotals(payments, today);
   const committedThisMonth = payments
@@ -147,7 +150,7 @@ async function TodayContent({ searchParams }: Pick<PageProps<"/today">, "searchP
                   </span>
                 )}
               </div>
-              <TaskList tasks={groups[group.key]} today={today} projects={projects} />
+              <TaskList tasks={groups[group.key]} today={today} projects={projects} rewards={rewards} />
             </section>
           ))}
         </div>

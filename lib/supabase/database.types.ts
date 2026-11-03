@@ -404,6 +404,102 @@ export type Database = {
         }
         Relationships: []
       }
+      quest_achievements: {
+        Row: {
+          code: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          unlocked_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          unlocked_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          unlocked_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      quest_goals: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          effective_from: string
+          id: string
+          period: string
+          target_cop: number
+          target_tasks: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          effective_from: string
+          id?: string
+          period: string
+          target_cop: number
+          target_tasks?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          effective_from?: string
+          id?: string
+          period?: string
+          target_cop?: number
+          target_tasks?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      quest_settings: {
+        Row: {
+          created_at: string
+          daily_min_tasks: number
+          deleted_at: string | null
+          id: string
+          updated_at: string
+          user_id: string
+          work_days: number[]
+        }
+        Insert: {
+          created_at?: string
+          daily_min_tasks?: number
+          deleted_at?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+          work_days?: number[]
+        }
+        Update: {
+          created_at?: string
+          daily_min_tasks?: number
+          deleted_at?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+          work_days?: number[]
+        }
+        Relationships: []
+      }
       recurring_tasks: {
         Row: {
           active: boolean
@@ -843,13 +939,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "time_entries_task_id_fkey"
-            columns: ["task_id"]
-            isOneToOne: false
-            referencedRelation: "tasks"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "time_entries_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
@@ -861,6 +950,13 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_entries_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
             referencedColumns: ["id"]
           },
           {

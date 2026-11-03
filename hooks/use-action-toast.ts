@@ -2,6 +2,7 @@
 
 import { useCallback, useTransition, type FormEvent } from "react";
 
+import { celebrate } from "@/components/quests/celebration";
 import { toast } from "@/components/ui/toast";
 import type { ActionResult } from "@/lib/action-result";
 
@@ -11,10 +12,11 @@ export function showResult(result: ActionResult | undefined, undo?: () => Promis
     toast.add({ title: result.error, type: "error" });
     return;
   }
+  if (result.celebrate) celebrate(result.celebrate);
   if (result.message) {
     toast.add({
       title: result.message,
-      description: result.warnings?.length ? result.warnings.join(" ") : undefined,
+      description: result.warnings?.length ? result.warnings.join(" ") : result.description,
       type: result.warnings?.length ? "warning" : "success",
       // Acciones destructivas: en lugar de confirmar antes, se ofrece deshacer.
       actionProps: undo

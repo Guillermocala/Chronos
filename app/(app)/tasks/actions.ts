@@ -5,6 +5,8 @@ import { z } from "zod";
 
 import { fail, failIssue, firstIssue, ok, type ActionResult } from "@/lib/action-result";
 import { requireUser } from "@/lib/auth";
+import { evaluateQuestProgress } from "@/lib/data/quests";
+import { questMessage } from "@/lib/quests/messages";
 import { addDays, todayCO } from "@/lib/dates";
 import { formatShortDate } from "@/lib/format";
 import { parseLine } from "@/lib/granola/parse";
@@ -88,7 +90,10 @@ export async function setTaskStatus(
   const { error } = await supabase.from("tasks").update({ status }).eq("id", id);
   if (error) return fail("No se pudo actualizar la tarea.");
   refresh();
-  return ok(status === "done" ? "¡Hecho!" : undefined);
+  if (status !== "done") return ok();
+  // Misiones: valor ganado, día cumplido, jefe derrotado y logros nuevos.
+  const event = await evaluateQuestProgress(supabase, id, todayCO());
+  return { ok: true, ...questMessage(event) };
 }
 
 /** Agrega a Mi día (hoy) o la quita (null). */

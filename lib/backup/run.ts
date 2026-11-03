@@ -218,6 +218,9 @@ export function readBackupDir(dir: string, projectSlugFilter?: string) {
     "action_items.json": "note_action_items",
     "recurring.json": "recurring_tasks",
     "external_links.json": "external_project_links",
+    "quest_settings.json": "quest_settings",
+    "quest_goals.json": "quest_goals",
+    "quest_achievements.json": "quest_achievements",
   };
   const readFolder = (folder: string) => {
     if (!existsSync(folder)) return;

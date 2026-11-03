@@ -33,10 +33,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { RewardBadge } from "@/components/quests/reward-badge";
 import { useAction } from "@/hooks/use-action-toast";
 import { daysBetween, type ISODate } from "@/lib/dates";
 import type { TaskWithProject } from "@/lib/data/tasks";
 import { relativeDay } from "@/lib/format";
+import type { Reward } from "@/lib/quests/reward";
 import { formatDuration } from "@/lib/time";
 import { cn } from "@/lib/utils";
 
@@ -48,9 +50,11 @@ type Props = {
   task: TaskWithProject;
   today: ISODate;
   projects: ProjectChoice[];
+  /** Misiones: cuánto vale terminarla. */
+  reward?: Reward;
 };
 
-export function TaskItem({ task, today, projects }: Props) {
+export function TaskItem({ task, today, projects, reward }: Props) {
   const { pending, run } = useAction();
   const [editing, setEditing] = useState(false);
   const done = task.status === "done";
@@ -89,6 +93,7 @@ export function TaskItem({ task, today, projects }: Props) {
           {task.title}
         </button>
         <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+          {reward && <RewardBadge reward={reward} done={done} />}
           {task.project && <ProjectBadge {...task.project} />}
           {task.priority === 1 && <Badge variant="destructive">Alta</Badge>}
           {task.kind === "follow_up" && (

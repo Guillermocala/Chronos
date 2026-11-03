@@ -110,6 +110,33 @@ Chronos es un gestor personal de tickets, sprints y valor en COP por proyecto. L
   - la carga es atómica: RPC `import_external_activities` (security invoker) crea una nota `source = 'leden'` con la tabla resumen y las tareas y horas;
   - los registros no facturables quedan desmarcados por defecto para no sumar en la liquidación OPS;
   - borrar una tarea borra sus horas ligadas, y "Deshacer" las restaura.
+- **Misiones** (`/quests`, capa de juego sobre las tareas):
+  - **misión** = tarea `todo` sin `auto_source` (los seguimientos y los "Cobrar…"/"Cerrar soporte" no cuentan);
+  - **valor** (`lib/quests/reward.ts`, `taskReward`), en este orden:
+    - ticket ligado con estimado → `ticketValue` (el soporte vale $0, con costo de oportunidad);
+    - si no, `estimated_hours` × `estimatedHourlyRate` del proyecto;
+    - sin estimado, las horas registradas (`time_entries.task_id`) × la tarifa;
+    - sin proyecto = misión personal: $0, pero cuenta para la racha;
+  - el valor se calcula en vivo, no se guarda: si cambia el contrato, cambia el histórico, igual que en Reportes;
+  - **día cumplido** = al menos `daily_min_tasks` misiones (3 por defecto), contadas por el día de `completed_at` en Colombia;
+  - **racha** (`lib/quests/streak.ts`):
+    - días cumplidos seguidos; los días no laborables no la rompen y, si se cumplen, suman;
+    - 1 comodín por semana para un día laborable fallado;
+    - se deriva del historial, sin tabla;
+  - **jefe semanal** (`boss.ts`): su vida es la meta semanal en COP y cada misión le quita su valor. El nombre rota por semana;
+  - **metas** semanal y mensual (`goals.ts`):
+    - el ritmo esperado es proporcional a los días laborables transcurridos;
+    - se muestra la diferencia, la proyección y cuánto falta por día;
+  - **logros**: catálogo fijo en `achievements.ts`. Se guardan en `quest_achievements` para celebrarlos una sola vez;
+  - **tablas** (migración `20261103000001_quests.sql`), con índice `tasks_done_completed_at_idx`; van en el backup global:
+    - `quest_settings`: una fila por usuario;
+    - `quest_goals`: `effective_from` = lunes o día 1, así los períodos pasados conservan su meta;
+    - `quest_achievements`;
+  - **al completar una tarea** desde cualquier vista, `setTaskStatus` llama a `evaluateQuestProgress` (`lib/data/quests.ts`):
+    - el aviso dice "¡Hecho! +$X", día cumplido, jefe derrotado y logros nuevos;
+    - `ActionResult.celebrate` lanza el confeti CSS (`components/quests/celebration.tsx`), que no aparece con "reducir movimiento";
+    - si las tablas fallan, queda el "¡Hecho!" de siempre;
+  - **Hoy** muestra el chip "+$X" en Vencido, Mi día y Vence hoy (`getTaskRewards`).
 - **Reportes** (fase 5):
   - `/reports`: cobros por mes, horas por semana, horas y tarifa por proyecto. Usa Recharts mediante el `chart` de shadcn, con los colores `--chart-1..5` validados con la skill dataviz y una tabla equivalente debajo de cada gráfica;
   - burndown en el tablero del sprint;

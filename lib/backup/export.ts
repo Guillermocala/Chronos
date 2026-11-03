@@ -60,9 +60,11 @@ export async function collectProject(db: Db, projectId: string): Promise<Project
   return { project, payments, sprints, tickets, time_entries, tasks, notes, action_items, recurring, external_links };
 }
 
-/** Tareas, notas y reglas recurrentes sin proyecto (siempre se exportan: son pocas). */
+/** Tareas, notas y reglas recurrentes sin proyecto, y Misiones (siempre se exportan: son pocas). */
 export async function collectGlobal(db: Db, userId: string): Promise<GlobalBundle> {
-  const [tasks, notes, action_items, recurring] = await Promise.all([
+  const byUser = (table: string) =>
+    rows(db, `select to_jsonb(t) as row from public.${table} t where t.user_id = $1`, [userId]);
+  const [tasks, notes, action_items, recurring, quest_settings, quest_goals, quest_achievements] = await Promise.all([
     rows(db, "select to_jsonb(t) as row from public.tasks t where t.user_id = $1 and t.project_id is null", [userId]),
     rows(
       db,
@@ -81,6 +83,9 @@ export async function collectGlobal(db: Db, userId: string): Promise<GlobalBundl
       "select to_jsonb(r) as row from public.recurring_tasks r where r.user_id = $1 and r.project_id is null",
       [userId],
     ),
+    byUser("quest_settings"),
+    byUser("quest_goals"),
+    byUser("quest_achievements"),
   ]);
-  return { tasks, notes, action_items, recurring };
+  return { tasks, notes, action_items, recurring, quest_settings, quest_goals, quest_achievements };
 }

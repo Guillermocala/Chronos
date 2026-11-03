@@ -13,6 +13,9 @@ export const RESTORE_ORDER = [
   // Después de tasks: las horas pueden estar ligadas a una tarea.
   "time_entries",
   "external_project_links",
+  "quest_settings",
+  "quest_goals",
+  "quest_achievements",
 ] as const;
 export type RestoreTable = (typeof RESTORE_ORDER)[number];
 
