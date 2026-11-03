@@ -137,6 +137,20 @@ Chronos es un gestor personal de tickets, sprints y valor en COP por proyecto. L
     - `ActionResult.celebrate` lanza el confeti CSS (`components/quests/celebration.tsx`), que no aparece con "reducir movimiento";
     - si las tablas fallan, queda el "¡Hecho!" de siempre;
   - **Hoy** muestra el chip "+$X" en Vencido, Mi día y Vence hoy (`getTaskRewards`).
+  - **Valor:** una tarea pendiente vale su estimado. Una completada con horas registradas vale las horas reales.
+- **Nueva tarea** (`components/tasks/quick-add-dialog.tsx`), con dos pestañas (se recuerda la última):
+  - **Rápida:** una línea con marcadores Granola;
+  - **Detallada:** `createTask` / `taskCreateSchema`, con los campos compartidos con la edición en `task-fields.tsx`:
+    - la fecha de inicio (Mi día) es hoy por defecto;
+    - las horas estimadas son opcionales;
+    - "Más opciones" agrupa etiquetas, Drive y notas;
+    - muestra "≈ Ganas +$X" con la tarifa de `listProjectRates`.
+- **Horas al completar** (el cronómetro de la tarea es externo):
+  - una misión sin estimado ni horas abre "¿Cuántas horas te tomó?" (`complete-task-dialog.tsx` → `completeTask`);
+  - **tarea de proyecto:** las horas van a `time_entries` con `task_id`, directo al proyecto, y cuentan en Horas y OPS;
+  - **tarea personal:** van a `tasks.spent_hours`, que es solo un registro;
+  - la lógica está en `lib/tasks/hours.ts`;
+  - editar una tarea hecha permite agregar horas (`add_hours`).
 - **Reportes** (fase 5):
   - `/reports`: cobros por mes, horas por semana, horas y tarifa por proyecto. Usa Recharts mediante el `chart` de shadcn, con los colores `--chart-1..5` validados con la skill dataviz y una tabla equivalente debajo de cada gráfica;
   - burndown en el tablero del sprint;

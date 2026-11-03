@@ -29,7 +29,7 @@ async function readAll<T>(
 }
 
 const DONE_SELECT =
-  "id, title, completed_at, planned_on, estimated_hours, project_id, ticket_id, kind, auto_source, priority, logged:time_entries(hours, deleted_at), project:projects(id, name, code_prefix, color)";
+  "id, title, status, completed_at, planned_on, estimated_hours, project_id, ticket_id, kind, auto_source, priority, logged:time_entries(hours, deleted_at), project:projects(id, name, code_prefix, color)";
 
 export type MissionView = {
   id: string;

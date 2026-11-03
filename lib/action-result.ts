@@ -7,8 +7,8 @@ export type ActionResult =
   | { ok: true; message?: string; warnings?: string[]; description?: string; celebrate?: Celebration }
   | { ok: false; error: string; field?: string };
 
-export function ok(message?: string, warnings?: string[]): ActionResult {
-  return { ok: true, message, warnings };
+export function ok(message?: string, warnings?: string[], description?: string): ActionResult {
+  return description ? { ok: true, message, warnings, description } : { ok: true, message, warnings };
 }
 
 /** `field` es el `name` del campo con el error, para marcarlo en el formulario. */

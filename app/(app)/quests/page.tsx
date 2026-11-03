@@ -10,6 +10,7 @@ import { MonthChart, WeeksChart } from "@/components/quests/progress-charts";
 import { QuestSettingsDialog } from "@/components/quests/settings-dialog";
 import { QuickAddDialog } from "@/components/tasks/quick-add-dialog";
 import { TaskList } from "@/components/tasks/task-list";
+import { VoiceDictation } from "@/components/voice/voice-dictation";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
@@ -28,10 +29,10 @@ import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Misiones · Chronos" };
 
-export default function QuestsPage() {
+export default function QuestsPage({ searchParams }: PageProps<"/quests">) {
   return (
     <Suspense fallback={<QuestsSkeleton />}>
-      <QuestsContent />
+      <QuestsContent searchParams={searchParams} />
     </Suspense>
   );
 }
@@ -46,12 +47,13 @@ const BOARD_GROUPS: { key: MissionView["group"]; title: string }[] = [
   { key: "dueToday", title: "Vencen hoy" },
 ];
 
-async function QuestsContent() {
+async function QuestsContent({ searchParams }: Pick<PageProps<"/quests">, "searchParams">) {
   await requireUser();
   const today = todayCO();
-  const [{ state, settings, goals, unlocked, missions }, projects] = await Promise.all([
+  const [{ state, settings, goals, unlocked, missions }, projects, params] = await Promise.all([
     getQuestPage(today),
     listProjectOptions(),
+    searchParams,
   ]);
 
   const open = missions.filter((m) => !m.done);
@@ -73,9 +75,10 @@ async function QuestsContent() {
         title="Misiones"
         description="Termina tus tareas, sube tu racha y derrota al jefe de la semana."
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <QuestSettingsDialog settings={settings} />
-            <QuickAddDialog defaultMyDay />
+            <VoiceDictation projects={projects} today={today} defaultMyDay defaultOpen={params.dictate === "1"} />
+            <QuickAddDialog defaultMyDay defaultOpen={params.add === "1"} />
           </div>
         }
       />

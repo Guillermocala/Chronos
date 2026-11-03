@@ -11,6 +11,8 @@ import {
 } from "@/lib/valuation";
 
 export type RewardTask = Pick<Tables<"tasks">, "estimated_hours" | "project_id" | "ticket_id"> & {
+  /** Sin estado se trata como pendiente (vale el estimado). */
+  status?: Tables<"tasks">["status"];
   /** Horas registradas a la tarea (incluye borradas; se filtran aquí). */
   logged?: { hours: number | null; deleted_at: string | null }[];
 };
@@ -53,9 +55,10 @@ export function loggedHours(task: RewardTask): number {
 /**
  * Valor de una tarea, en este orden:
  * 1. ticket ligado con estimado → `ticketValue` (soporte = 0 con costo de oportunidad);
- * 2. horas estimadas de la tarea × tarifa estimada del proyecto;
- * 3. horas registradas × tarifa (actividades cargadas sin estimado);
- * 4. si no, $0 (personal o sin datos).
+ * 2. completada con horas registradas → horas reales × tarifa (como la liquidación OPS);
+ * 3. horas estimadas de la tarea × tarifa estimada del proyecto;
+ * 4. horas registradas × tarifa (pendiente sin estimado);
+ * 5. si no, $0 (personal o sin datos).
  */
 export function taskReward(
   task: RewardTask,
@@ -82,11 +85,14 @@ export function taskReward(
     return { ...NONE(false), rate };
   }
 
+  const logged = loggedHours(task);
+  if (task.status === "done" && logged > 0) {
+    return { cop: Math.round(logged * rate), source: "logged", hours: logged, rate, opportunityCost: null, personal: false };
+  }
   const estimate = task.estimated_hours != null ? Number(task.estimated_hours) : 0;
   if (estimate > 0) {
     return { cop: Math.round(estimate * rate), source: "estimate", hours: estimate, rate, opportunityCost: null, personal: false };
   }
-  const logged = loggedHours(task);
   if (logged > 0) {
     return { cop: Math.round(logged * rate), source: "logged", hours: logged, rate, opportunityCost: null, personal: false };
   }

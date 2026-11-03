@@ -669,6 +669,7 @@ export type Database = {
           project_id: string | null
           recurring_task_id: string | null
           source_note_id: string | null
+          spent_hours: number | null
           status: Database["public"]["Enums"]["task_status"]
           tags: string[]
           ticket_id: string | null
@@ -698,6 +699,7 @@ export type Database = {
           project_id?: string | null
           recurring_task_id?: string | null
           source_note_id?: string | null
+          spent_hours?: number | null
           status?: Database["public"]["Enums"]["task_status"]
           tags?: string[]
           ticket_id?: string | null
@@ -727,6 +729,7 @@ export type Database = {
           project_id?: string | null
           recurring_task_id?: string | null
           source_note_id?: string | null
+          spent_hours?: number | null
           status?: Database["public"]["Enums"]["task_status"]
           tags?: string[]
           ticket_id?: string | null

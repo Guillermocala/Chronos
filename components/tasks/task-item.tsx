@@ -38,12 +38,14 @@ import { useAction } from "@/hooks/use-action-toast";
 import { daysBetween, type ISODate } from "@/lib/dates";
 import type { TaskWithProject } from "@/lib/data/tasks";
 import { relativeDay } from "@/lib/format";
-import type { Reward } from "@/lib/quests/reward";
+import { isMission, type Reward } from "@/lib/quests/reward";
+import { needsHoursOnComplete, realHours } from "@/lib/tasks/hours";
 import { formatDuration } from "@/lib/time";
 import { cn } from "@/lib/utils";
 
 import { DocLink } from "./doc-link";
 import { ProjectBadge } from "./project-badge";
+import { CompleteTaskDialog } from "./complete-task-dialog";
 import { TaskDialog, type ProjectChoice } from "./task-dialog";
 
 type Props = {
@@ -57,13 +59,14 @@ type Props = {
 export function TaskItem({ task, today, projects, reward }: Props) {
   const { pending, run } = useAction();
   const [editing, setEditing] = useState(false);
+  const [completing, setCompleting] = useState(false);
   const done = task.status === "done";
   const overdue = !done && task.due_date !== null && daysBetween(task.due_date, today) > 0;
   const inMyDay = task.planned_on !== null && daysBetween(task.planned_on, today) >= 0;
   const waitingDays = daysBetween(task.created_at.slice(0, 10), today);
-  const loggedHours = (task.logged ?? [])
-    .filter((e) => e.deleted_at === null)
-    .reduce((sum, e) => sum + Number(e.hours ?? 0), 0);
+  const loggedHours = realHours(task);
+  // Sin estimado ni horas: al completarla se pregunta cuánto tomó (cronómetro externo).
+  const askHours = isMission(task) && needsHoursOnComplete(task);
 
   return (
     <li
@@ -77,9 +80,10 @@ export function TaskItem({ task, today, projects, reward }: Props) {
         checked={done}
         disabled={pending}
         aria-label={done ? "Marcar como pendiente" : "Marcar como hecha"}
-        onCheckedChange={(checked) =>
-          run(() => setTaskStatus(task.id, checked ? "done" : "open"))
-        }
+        onCheckedChange={(checked) => {
+          if (checked && askHours) setCompleting(true);
+          else run(() => setTaskStatus(task.id, checked ? "done" : "open"));
+        }}
       />
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <button
@@ -185,6 +189,16 @@ export function TaskItem({ task, today, projects, reward }: Props) {
         </DropdownMenuContent>
       </DropdownMenu>
       <TaskDialog task={task} projects={projects} open={editing} onOpenChange={setEditing} />
+      {askHours && (
+        <CompleteTaskDialog
+          taskId={task.id}
+          title={task.title}
+          projectCode={task.project?.code_prefix}
+          rate={reward?.rate}
+          open={completing}
+          onOpenChange={setCompleting}
+        />
+      )}
     </li>
   );
 }

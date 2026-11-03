@@ -2,6 +2,7 @@ import "server-only";
 
 import { requireUser } from "@/lib/auth";
 import type { Tables } from "@/lib/supabase/database.types";
+import { estimatedHourlyRate } from "@/lib/valuation";
 
 export type Project = Tables<"projects">;
 export type Payment = Tables<"payments">;
@@ -91,4 +92,35 @@ export async function listAllPayments(): Promise<(Payment & { project: { name: s
     .is("project.deleted_at", null);
   if (error) throw error;
   return data.map(({ project, ...p }) => ({ ...p, project: project ? { name: project.name } : null }));
+}
+
+export type ProjectRate = ProjectOption & {
+  /** Tarifa por hora estimada (null si el contrato no permite calcularla). */
+  rate: number | null;
+};
+
+/** Proyectos abiertos con su tarifa estimada (formulario de nueva tarea: "≈ Ganas +$X"). */
+export async function listProjectRates(): Promise<ProjectRate[]> {
+  const { supabase } = await requireUser();
+  const [projects, hours] = await Promise.all([
+    supabase
+      .from("projects")
+      .select(
+        "id, name, code_prefix, color, billing_type, fixed_amount_cop, estimated_total_hours, monthly_fee_cop, expected_hours_per_month, contract_months",
+      )
+      .is("deleted_at", null)
+      .neq("phase", "closed")
+      .order("name"),
+    supabase.from("project_hours").select("project_id, scope_estimated"),
+  ]);
+  if (projects.error) throw projects.error;
+  if (hours.error) throw hours.error;
+  const scope = new Map(hours.data.map((h) => [h.project_id, h.scope_estimated]));
+  return projects.data.map(({ id, name, code_prefix, color, ...billing }) => ({
+    id,
+    name,
+    code_prefix,
+    color,
+    rate: estimatedHourlyRate(billing, scope.get(id)),
+  }));
 }

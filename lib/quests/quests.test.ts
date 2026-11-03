@@ -55,6 +55,13 @@ describe("valor de una misión", () => {
     expect(r).toMatchObject({ cop: 32_813, source: "logged", hours: 1.5 });
   });
 
+  it("pendiente vale el estimado; completada con horas reales vale las reales", () => {
+    const logged = [{ hours: 3, deleted_at: null }];
+    expect(taskReward(task({ estimated_hours: 2, logged }), ops)).toMatchObject({ cop: 43_750, source: "estimate" });
+    expect(taskReward(task({ estimated_hours: 2, logged, status: "done" }), ops)).toMatchObject({ cop: 65_625, source: "logged", hours: 3 });
+    expect(taskReward(task({ estimated_hours: 2, status: "done" }), ops)).toMatchObject({ cop: 43_750, source: "estimate" });
+  });
+
   it("ticket de alcance con estimado manda; soporte vale 0 con costo de oportunidad", () => {
     expect(taskReward(task({ estimated_hours: 1 }), ops, { kind: "scope", billable: true, estimated_hours: 4 }).cop).toBe(87_500);
     const support = taskReward(task({ estimated_hours: 1 }), ops, { kind: "support", billable: false, estimated_hours: 2 });
