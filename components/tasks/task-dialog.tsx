@@ -18,7 +18,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { useAction } from "@/hooks/use-action-toast";
 import type { TaskWithProject } from "@/lib/data/tasks";
 import { realHours } from "@/lib/tasks/hours";
-import { formatDuration } from "@/lib/time";
+import { formatDuration, parseDurationInput } from "@/lib/time";
 
 import { hoursToInput, TaskFields, type ProjectChoice } from "./task-fields";
 
@@ -35,6 +35,23 @@ export function TaskDialog({ task, projects, open, onOpenChange }: Props) {
   const { pending, submit } = useAction();
   const [status, setStatus] = useState(task.status);
   const spent = realHours(task);
+  const [real, setReal] = useState(spent > 0 ? hoursToInput(spent) : "");
+  const [realDirty, setRealDirty] = useState(false);
+  // Al abrir de nuevo, las horas reales parten de lo guardado (pudieron cambiar al completar).
+  const [wasOpen, setWasOpen] = useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) {
+      setReal(spent > 0 ? hoursToInput(spent) : "");
+      setRealDirty(false);
+    }
+  }
+  const realValue = parseDurationInput(real);
+  const realInvalid = real.trim() !== "" && realValue === null;
+  const realDiff =
+    realValue !== null && task.estimated_hours != null
+      ? Math.round((realValue - Number(task.estimated_hours)) * 100) / 100
+      : null;
 
   // El proyecto actual puede estar cerrado y no venir en la lista: se agrega.
   const choices =
@@ -72,7 +89,7 @@ export function TaskDialog({ task, projects, open, onOpenChange }: Props) {
                 notes: task.notes ?? "",
               }}
             />
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-2 sm:items-start">
               <Field>
                 <FieldLabel htmlFor={`status-${task.id}`}>Estado</FieldLabel>
                 <NativeSelect
@@ -87,22 +104,29 @@ export function TaskDialog({ task, projects, open, onOpenChange }: Props) {
                   <NativeSelectOption value="dismissed">Descartada</NativeSelectOption>
                 </NativeSelect>
               </Field>
-              {status === "done" && (
-                <Field>
-                  <FieldLabel htmlFor={`add-hours-${task.id}`}>Agregar horas que tomó</FieldLabel>
-                  <Input
-                    id={`add-hours-${task.id}`}
-                    name="add_hours"
-                    inputMode="decimal"
-                    autoComplete="off"
-                    placeholder="1:30, 2h, 45m"
-                  />
-                  <FieldDescription>
-                    {spent > 0 ? `Ya registradas: ${formatDuration(spent)}.` : "Aún sin horas registradas."}
-                    {task.project ? ` Se suman a las horas de ${task.project.code_prefix}.` : ""}
-                  </FieldDescription>
-                </Field>
-              )}
+              <Field data-invalid={realInvalid || undefined}>
+                <FieldLabel htmlFor={`real-hours-${task.id}`}>Horas reales</FieldLabel>
+                <Input
+                  id={`real-hours-${task.id}`}
+                  // Solo se envía si se cambió: así guardar otros campos no reescribe los registros.
+                  name={realDirty ? "real_hours" : undefined}
+                  value={real}
+                  onChange={(e) => {
+                    setReal(e.target.value);
+                    setRealDirty(true);
+                  }}
+                  inputMode="decimal"
+                  autoComplete="off"
+                  placeholder={task.estimated_hours != null ? `~${formatDuration(task.estimated_hours)} estimadas` : "1:30, 2h, 45m"}
+                  aria-invalid={realInvalid || undefined}
+                />
+                <FieldDescription>
+                  {realDiff !== null && realDiff !== 0
+                    ? `${realDiff > 0 ? "+" : "−"}${formatDuration(Math.abs(realDiff))} frente al estimado. `
+                    : ""}
+                  {task.project ? `Cuentan en las horas de ${task.project.code_prefix}.` : "Tarea personal: solo como registro."}
+                </FieldDescription>
+              </Field>
             </div>
           </FieldGroup>
           <DialogFooter>

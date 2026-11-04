@@ -9,7 +9,12 @@ import { FILLERS, ITEM_SEPARATORS, MONTHS, NUMBER_WORDS } from "./vocabulary";
 
 export type VoiceProject = { id: string; code_prefix: string; name: string };
 
-export type SpokenLine = { text: string; type: ItemType };
+export type SpokenLine = {
+  text: string;
+  type: ItemType;
+  /** Dicha dentro de un bloque "personal": no hereda el proyecto por defecto. */
+  personal?: boolean;
+};
 
 export type NormalizedSpeech = {
   lines: SpokenLine[];
@@ -138,6 +143,51 @@ function extractProject(text: string, projects: VoiceProject[]): { text: string;
   return { text, marker: null };
 }
 
+export type ProjectHeader = { prefix: string | null; rest: string };
+
+const HEADER_RESET_RE =
+  /^(?:(?:tareas?|misiones?)\s+)?(?:personal(?:es)?|sin\s+proyecto|ning[uú]n\s+proyecto|proyecto\s+personal)$/i;
+const HEADER_PROJECT_RE = /^(?:(?:y|ahora|bueno)\s+)*(?:(?:para|en|de)\s+(?:el\s+)?|del\s+)?proyecto\s+(.+)$/i;
+
+/**
+ * Un segmento que solo nombra un proyecto ("proyecto web", "@WEB", "WEB:",
+ * "personal") abre un bloque: las tareas siguientes van a ese proyecto hasta
+ * que se nombre otro. Con dos puntos puede traer la primera tarea detrás
+ * ("WEB: ajustar el menú"). Devuelve null si el segmento es una tarea normal.
+ */
+export function detectProjectHeader(segment: string, projects: VoiceProject[]): ProjectHeader | null {
+  const colon = segment.indexOf(":");
+  const head = (colon >= 0 ? segment.slice(0, colon) : segment).replace(/[\s.,;–—-]+$/g, "").trim();
+  const rest = colon >= 0 ? segment.slice(colon + 1).trim() : "";
+  if (!head) return null;
+
+  if (HEADER_RESET_RE.test(strip(head))) return { prefix: null, rest };
+
+  const at = /^@([A-Za-z][A-Za-z0-9]{1,9})$/.exec(head);
+  if (at) return { prefix: at[1].toUpperCase(), rest };
+
+  const named = HEADER_PROJECT_RE.exec(head);
+  if (named) {
+    const words = named[1].trim().split(/\s+/);
+    const found = matchProject(words, projects);
+    if (found && found.used === words.length) return { prefix: found.prefix, rest };
+    // Proyecto desconocido de una palabra: se marca igual para que la vista previa avise.
+    if (!found && words.length === 1) {
+      const prefix = strip(words[0]).replace(/[^a-z0-9]/g, "").slice(0, 10).toUpperCase();
+      if (/^[A-Z][A-Z0-9]{1,9}$/.test(prefix)) return { prefix, rest };
+    }
+    return null;
+  }
+
+  // "WEB:" o "Sitio web:" (sin la palabra proyecto) solo con dos puntos.
+  if (colon >= 0) {
+    const words = head.split(/\s+/);
+    const found = matchProject(words, projects);
+    if (found && found.used === words.length) return { prefix: found.prefix, rest };
+  }
+  return null;
+}
+
 function extractWaiting(text: string): { text: string; marker: string | null } {
   const m = /\b(?:esperando|espero)\s+(?:la\s+)?(?:respuesta\s+)?(?:a|de|que)\s+([\p{L}]+)/iu.exec(text);
   if (!m) return { text, marker: null };
@@ -183,7 +233,8 @@ export function normalizeSpoken(
   spoken: string,
   { projects, today }: { projects: VoiceProject[]; today: ISODate },
 ): NormalizedSpeech {
-  let text = ` ${spoken.replace(/\s+/g, " ")} `.replace(FILLER_RE, "$1");
+  // Los saltos de línea se conservan: separan tareas cuando se escribe a mano.
+  let text = ` ${spoken.replace(/[^\S\n]+/g, " ").replace(/ ?\n ?/g, "\n")} `.replace(FILLER_RE, "$1");
 
   let plannedOn: ISODate | null = null;
   const dayContext =
@@ -196,7 +247,16 @@ export function normalizeSpoken(
   }
 
   const lines: SpokenLine[] = [];
-  for (const segment of splitSegments(text)) {
+  // Bloque activo: undefined = no se ha nombrado; null = "personal"; string = prefijo.
+  let block: string | null | undefined;
+  for (const raw of splitSegments(text)) {
+    let segment = raw;
+    const header = detectProjectHeader(segment, projects);
+    if (header) {
+      block = header.prefix;
+      if (!header.rest) continue;
+      segment = header.rest;
+    }
     let rest = ` ${segment} `;
     let type: ItemType = "task";
 
@@ -230,10 +290,15 @@ export function normalizeSpoken(
     const project = extractProject(rest, projects);
     rest = project.text;
     if (project.marker) markers.push(project.marker);
+    // El proyecto dicho (o escrito como @X) en la propia línea manda sobre el bloque.
+    const ownProject = project.marker !== null || /(^|\s)@[A-Za-z]/.test(rest);
+    if (!ownProject && block) markers.push(`@${block}`);
 
     const title = tidyTitle(rest);
     if (!title && markers.length === 0) continue;
-    lines.push({ text: [title, ...markers].join(" ").trim(), type });
+    const line: SpokenLine = { text: [title, ...markers].join(" ").trim(), type };
+    if (!ownProject && block === null) line.personal = true;
+    lines.push(line);
   }
 
   return { lines, plannedOn };
@@ -248,9 +313,9 @@ export function interpretSpoken(
   const day = plannedOn ?? (ctx.myDay ? ctx.today : null);
   const defaultProject = ctx.projects.find((p) => p.id === ctx.defaultProjectId) ?? null;
 
-  const items = lines.map(({ text, type }) => {
+  const items = lines.map(({ text, type, personal }) => {
     const item = parseLine(text, { projects: ctx.projects, today: ctx.today, defaultType: type });
-    if (!item.projectId && !item.projectPrefix && defaultProject) {
+    if (!item.projectId && !item.projectPrefix && defaultProject && !personal) {
       item.projectId = defaultProject.id;
       item.projectPrefix = defaultProject.code_prefix;
     }

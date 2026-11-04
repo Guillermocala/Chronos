@@ -191,6 +191,17 @@ function sectionOf(heading: string): SectionType | "other" {
   return "other";
 }
 
+/**
+ * "@WEB", "Proyecto WEB" → "WEB"; "Personal" / "Sin proyecto" → null;
+ * cualquier otro subtítulo → undefined (no es un bloque de proyecto).
+ */
+function projectHeading(heading: string): string | null | undefined {
+  const key = normalize(heading);
+  if (/^(?:personal(?:es)?|sin proyecto)$/.test(key)) return null;
+  const m = /^(?:proyecto\s+@?|@)([a-z][a-z0-9]{1,9})$/.exec(key);
+  return m ? m[1].toUpperCase() : undefined;
+}
+
 function extractFrontMatter(markdown: string): { body: string; date: string | null } {
   const match = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/.exec(markdown);
   if (!match) return { body: markdown, date: null };
@@ -220,6 +231,8 @@ export function parseDictation(
 
   let title: string | null = null;
   let section: SectionType | "other" | null = null;
+  // Subtítulo "### @WEB" / "### Proyecto WEB" / "### Personal": proyecto de los ítems siguientes.
+  let block: string | null = null;
   let skippedDone = 0;
   const lines: { text: string; type: ItemType }[] = [];
 
@@ -232,8 +245,9 @@ export function parseDictation(
       const inItemSection = section === "task" || section === "follow_up" || section === "ticket";
       // Fuera de las secciones reconocidas solo cuentan las casillas "- [ ]".
       if (section === "notes" || (!inItemSection && item.checked !== false)) continue;
-      const text = listItemText(item);
+      let text = listItemText(item);
       if (!text.trim()) continue;
+      if (block && !/(^|\s)@[A-Za-z]/.test(text)) text = `${text} @${block}`;
       lines.push({ text, type: inItemSection ? (section as ItemType) : "task" });
     }
   };
@@ -241,8 +255,16 @@ export function parseDictation(
   for (const node of tree.children as RootContent[]) {
     if (node.type === "heading") {
       const text = phrasingText(node.children);
-      if (node.depth === 1 && title === null) title = text.trim();
-      else section = sectionOf(text);
+      if (node.depth === 1 && title === null) {
+        title = text.trim();
+        continue;
+      }
+      const header = node.depth >= 3 ? projectHeading(text) : undefined;
+      if (header !== undefined) block = header;
+      else {
+        section = sectionOf(text);
+        block = null;
+      }
     } else if (node.type === "list") {
       handleList(node);
     }

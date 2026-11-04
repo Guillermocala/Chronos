@@ -11,7 +11,7 @@ import { questMessage } from "@/lib/quests/messages";
 import { addDays, todayCO } from "@/lib/dates";
 import { formatShortDate } from "@/lib/format";
 import { parseLine } from "@/lib/granola/parse";
-import { planCompletionHours } from "@/lib/tasks/hours";
+import { defaultCompletionHours, planCompletionHours, planRealHoursEdit } from "@/lib/tasks/hours";
 import { taskCreateSchema, taskUpdateSchema } from "@/lib/tasks/schema";
 import { formatDuration } from "@/lib/time";
 
@@ -54,6 +54,7 @@ export async function quickAddTask(formData: FormData): Promise<ActionResult> {
     project_id: item.projectId ?? input.data.project_id ?? null,
     doc_url: item.doc_url,
     doc_kind: item.doc_kind,
+    estimated_hours: item.estimated_hours,
   });
   if (error) return fail("No se pudo crear la tarea.");
 
@@ -71,22 +72,35 @@ export async function quickAddTask(formData: FormData): Promise<ActionResult> {
 
 type Supabase = Awaited<ReturnType<typeof requireUser>>["supabase"];
 
+const HOURS_SELECT = "project_id, spent_hours, estimated_hours, logged:time_entries(id, hours, started_at, deleted_at)";
+
+async function loadHoursTask(supabase: Supabase, taskId: string) {
+  const { data, error } = await supabase.from("tasks").select(HOURS_SELECT).eq("id", taskId).single();
+  return error ? null : data;
+}
+
+// Mediodía en Colombia para que la fecha no cambie por zona horaria (como logTime).
+const noonCO = () => `${todayCO()}T12:00:00-05:00`;
+
 /**
  * Registra las horas que tomó una tarea: de proyecto → horas directas al
  * proyecto (cuentan en Horas y OPS); personal → `spent_hours` de la tarea.
+ * Sin horas escritas y con `useEstimate`, registra lo que falte para el estimado.
+ * Devuelve las horas registradas (0 si ninguna) o null si falló.
  */
-async function recordTaskHours(supabase: Supabase, taskId: string, hours: number | null): Promise<boolean> {
-  if (hours == null) return true;
-  const { data: task, error } = await supabase
-    .from("tasks")
-    .select("project_id, spent_hours, estimated_hours")
-    .eq("id", taskId)
-    .single();
-  if (error) return false;
-  const plan = planCompletionHours(task, hours);
+async function recordTaskHours(
+  supabase: Supabase,
+  taskId: string,
+  hours: number | null,
+  { useEstimate = false } = {},
+): Promise<number | null> {
+  if (hours == null && !useEstimate) return 0;
+  const task = await loadHoursTask(supabase, taskId);
+  if (!task) return null;
+  const toRecord = hours ?? defaultCompletionHours(task);
+  const plan = planCompletionHours(task, toRecord);
   if (plan.kind === "entry") {
-    // Mediodía en Colombia para que la fecha no cambie por zona horaria (como logTime).
-    const at = `${todayCO()}T12:00:00-05:00`;
+    const at = noonCO();
     const { error: entryError } = await supabase.from("time_entries").insert({
       project_id: plan.project_id,
       task_id: taskId,
@@ -94,13 +108,49 @@ async function recordTaskHours(supabase: Supabase, taskId: string, hours: number
       ended_at: at,
       hours: plan.hours,
     });
-    return !entryError;
+    return entryError ? null : plan.hours;
   }
   if (plan.kind === "spent") {
     const { error: spentError } = await supabase.from("tasks").update({ spent_hours: plan.hours }).eq("id", taskId);
-    return !spentError;
+    return spentError ? null : toRecord;
   }
-  return true;
+  return 0;
+}
+
+/** Fija el total de horas reales de una tarea (editor). Devuelve false si falló. */
+async function setTaskRealHours(supabase: Supabase, taskId: string, total: number | null): Promise<boolean> {
+  const task = await loadHoursTask(supabase, taskId);
+  if (!task) return false;
+  const plan = planRealHoursEdit(task, total);
+  if (plan.kind === "none") return true;
+  if (plan.kind === "spent") {
+    const { error } = await supabase.from("tasks").update({ spent_hours: plan.spent_hours }).eq("id", taskId);
+    return !error;
+  }
+  // Proyecto: soft delete de los registros vivos y uno nuevo con el total, en la fecha del primero.
+  const live = (task.logged ?? []).filter((e) => !e.deleted_at);
+  const at = live.map((e) => e.started_at).sort()[0] ?? noonCO();
+  if (live.length > 0) {
+    const { error } = await supabase
+      .from("time_entries")
+      .update({ deleted_at: new Date().toISOString() })
+      .in(
+        "id",
+        live.map((e) => e.id),
+      );
+    if (error) return false;
+  }
+  const { error: spentError } = await supabase.from("tasks").update({ spent_hours: null }).eq("id", taskId);
+  if (spentError) return false;
+  if (plan.hours == null) return true;
+  const { error } = await supabase.from("time_entries").insert({
+    project_id: plan.project_id,
+    task_id: taskId,
+    started_at: at,
+    ended_at: at,
+    hours: plan.hours,
+  });
+  return !error;
 }
 
 /** "Nueva tarea" detallada: todos los campos, con fecha de inicio (Mi día) hoy por defecto en el formulario. */
@@ -128,36 +178,42 @@ export async function updateTask(formData: FormData): Promise<ActionResult> {
   const parsed = taskUpdateSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return failIssue(parsed.error);
 
-  const { id, add_hours, ...changes } = parsed.data;
+  const { id, real_hours, ...changes } = parsed.data;
   const { error } = await supabase.from("tasks").update(changes).eq("id", id);
   if (error) return fail("No se pudo guardar la tarea.");
-  if (changes.status === "done" && add_hours != null && !(await recordTaskHours(supabase, id, add_hours))) {
+  // Las horas van después: si cambió el proyecto, el registro queda en el proyecto nuevo.
+  if (real_hours !== undefined && !(await setTaskRealHours(supabase, id, real_hours))) {
     refresh();
-    return fail("La tarea se guardó, pero no se pudieron registrar las horas.");
+    return fail("La tarea se guardó, pero no se pudieron actualizar las horas reales.");
   }
 
   refresh();
-  return ok("Tarea guardada.", undefined, add_hours != null ? `Horas registradas: ${formatDuration(add_hours)}.` : undefined);
+  return ok("Tarea guardada.");
 }
 
 const idSchema = z.uuid();
 const completionHours = z.number().positive().max(24).nullable();
 
-/** Completa una tarea registrando antes las horas que tomó (opcional). */
+/**
+ * Completa una tarea registrando antes las horas que tomó. Sin horas
+ * ("Omitir"), registra las estimadas que falten.
+ */
 export async function completeTask(id: string, hours: number | null): Promise<ActionResult> {
   const { supabase } = await requireUser();
   if (!idSchema.safeParse(id).success) return fail("Tarea inválida.");
   if (!completionHours.safeParse(hours).success) return fail("Horas inválidas (máx. 24 h).");
 
   // Primero las horas: así el valor ganado ya usa las horas reales.
-  if (!(await recordTaskHours(supabase, id, hours))) return fail("No se pudieron registrar las horas.");
+  const recorded = await recordTaskHours(supabase, id, hours, { useEstimate: true });
+  if (recorded === null) return fail("No se pudieron registrar las horas.");
   const { error } = await supabase.from("tasks").update({ status: "done" }).eq("id", id);
   if (error) return fail("No se pudo completar la tarea.");
   refresh();
 
   const event = await evaluateQuestProgress(supabase, id, todayCO());
   const result = questMessage(event);
-  const hoursNote = hours != null ? `⏱️ ${formatDuration(hours)} registradas.` : null;
+  const hoursNote =
+    recorded > 0 ? `⏱️ ${formatDuration(recorded)} registradas${hours == null ? " (estimado)" : ""}.` : null;
   return {
     ok: true,
     ...result,

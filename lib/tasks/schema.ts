@@ -84,8 +84,8 @@ export const taskUpdateSchema = z
     id: z.uuid(),
     status: z.enum(["open", "waiting", "done", "dismissed"]),
     ...taskFields,
-    /** Solo tareas hechas: horas que tomó (se suman a lo registrado). */
-    add_hours: optionalDuration.optional(),
+    /** Total de horas reales (vacío = sin horas). Ausente = no se toca. */
+    real_hours: optionalDuration.optional(),
   })
   .transform(({ doc, ...task }) => ({
     ...task,

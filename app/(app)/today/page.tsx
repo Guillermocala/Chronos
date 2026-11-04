@@ -21,9 +21,10 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireUser } from "@/lib/auth";
 import { todayCO } from "@/lib/dates";
-import { listAllPayments, listProjectOptions } from "@/lib/data/projects";
+import { listAllPayments, listProjectRates } from "@/lib/data/projects";
 import { getTaskRewards } from "@/lib/data/quests";
-import { listTodayCandidates } from "@/lib/data/tasks";
+import { listDoneToday, listTodayCandidates } from "@/lib/data/tasks";
+import { realHours } from "@/lib/tasks/hours";
 import { getRunningTimer, listTicketsInProgress } from "@/lib/data/tickets";
 import { formatCOP, plural } from "@/lib/format";
 import { groupTodayTasks, TODAY_GROUPS } from "@/lib/tasks/today";
@@ -52,9 +53,10 @@ async function TodayContent({ searchParams }: Pick<PageProps<"/today">, "searchP
   const today = todayCO();
   const month = today.slice(0, 7);
 
-  const [tasks, projects, payments, inProgress, running] = await Promise.all([
+  const [tasks, doneToday, projects, payments, inProgress, running] = await Promise.all([
     listTodayCandidates(today),
-    listProjectOptions(),
+    listDoneToday(today),
+    listProjectRates(),
     listAllPayments(),
     listTicketsInProgress(),
     getRunningTimer(),
@@ -65,7 +67,12 @@ async function TodayContent({ searchParams }: Pick<PageProps<"/today">, "searchP
   const pendingCount = Object.values(groups).reduce((n, g) => n + g.length, 0);
   const myDayHours = groups.myDay.reduce((sum, t) => sum + (t.estimated_hours ?? 0), 0);
   // Misiones: chip "+$X" en lo que se juega hoy.
-  const rewards = await getTaskRewards([...groups.overdue, ...groups.myDay, ...groups.dueToday]);
+  const rewards = await getTaskRewards([...groups.overdue, ...groups.myDay, ...groups.dueToday, ...doneToday]);
+  // Resumen del día: lo que falta (valor + horas estimadas) y lo hecho (horas reales vs estimadas).
+  const myDayCop = groups.myDay.reduce((sum, t) => sum + (rewards[t.id]?.cop ?? 0), 0);
+  const doneCop = doneToday.reduce((sum, t) => sum + (rewards[t.id]?.cop ?? 0), 0);
+  const doneReal = doneToday.reduce((sum, t) => sum + realHours(t), 0);
+  const doneEstimate = doneToday.reduce((sum, t) => sum + Number(t.estimated_hours ?? 0), 0);
 
   const totals = paymentTotals(payments, today);
   const committedThisMonth = payments
@@ -98,6 +105,29 @@ async function TodayContent({ searchParams }: Pick<PageProps<"/today">, "searchP
           </div>
         }
       />
+
+      <section className="grid grid-cols-2 gap-3" aria-label="Resumen de tu día">
+        <StatCard
+          label="Mi día · por hacer"
+          value={formatCOP(myDayCop)}
+          hint={`${plural(groups.myDay.length, "tarea", "tareas")}${myDayHours > 0 ? ` · ~${formatDuration(myDayHours)} estimadas` : ""}`}
+        />
+        <StatCard
+          label="Hecho hoy"
+          value={doneReal > 0 ? `${formatDuration(doneReal)} reales` : plural(doneToday.length, "tarea", "tareas")}
+          hint={
+            doneToday.length === 0
+              ? "Aún nada completado."
+              : [
+                  doneReal > 0 ? plural(doneToday.length, "tarea", "tareas") : null,
+                  doneEstimate > 0 ? `~${formatDuration(doneEstimate)} estimadas` : null,
+                  doneCop > 0 ? formatCOP(doneCop) : null,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")
+          }
+        />
+      </section>
 
       {inProgress.length > 0 && (
         <section className="flex flex-col gap-2" aria-labelledby="group-tickets">

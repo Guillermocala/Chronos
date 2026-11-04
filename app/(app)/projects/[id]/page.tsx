@@ -19,7 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { isMonthlyBilling, projectHourPeriods, toHourEntries } from "@/lib/billing/hours-settlement";
 import { todayCO } from "@/lib/dates";
-import { getProject, listProjectOptions } from "@/lib/data/projects";
+import { getProject, listProjectRates } from "@/lib/data/projects";
 import { listProjectTasks } from "@/lib/data/tasks";
 import { getProjectHours, getRunningTimer, listProjectTickets, listProjectTimeEntries } from "@/lib/data/tickets";
 import { formatCOP, formatDate, formatHours, plural } from "@/lib/format";
@@ -42,7 +42,7 @@ async function ProjectContent({ params }: Pick<PageProps<"/projects/[id]">, "par
   const [project, tasks, projects, tickets, hours, running, timeEntries] = await Promise.all([
     getProject(id),
     listProjectTasks(id),
-    listProjectOptions(),
+    listProjectRates(),
     listProjectTickets(id),
     getProjectHours(id),
     getRunningTimer(),

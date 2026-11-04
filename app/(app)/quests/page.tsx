@@ -18,13 +18,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { requireUser } from "@/lib/auth";
 import { addDays, todayCO, type ISODate } from "@/lib/dates";
-import { listProjectOptions } from "@/lib/data/projects";
+import { listProjectRates } from "@/lib/data/projects";
 import { getQuestPage, type MissionView } from "@/lib/data/quests";
 import type { TaskWithProject } from "@/lib/data/tasks";
 import { formatCOP, plural } from "@/lib/format";
 import { ACHIEVEMENTS } from "@/lib/quests/achievements";
 import { activeGoal, periodRange, type GoalProgress } from "@/lib/quests/goals";
 import type { Reward } from "@/lib/quests/reward";
+import { formatDuration } from "@/lib/time";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Misiones · Chronos" };
@@ -52,13 +53,17 @@ async function QuestsContent({ searchParams }: Pick<PageProps<"/quests">, "searc
   const today = todayCO();
   const [{ state, settings, goals, unlocked, missions }, projects, params] = await Promise.all([
     getQuestPage(today),
-    listProjectOptions(),
+    listProjectRates(),
     searchParams,
   ]);
 
   const open = missions.filter((m) => !m.done);
   const doneToday = missions.filter((m) => m.done);
   const atStake = open.reduce((sum, m) => sum + m.reward.cop, 0);
+  // Horas del día: lo planeado (estimado de pendientes + completadas) frente a lo real de lo completado.
+  const pendingHours = open.reduce((sum, m) => sum + (m.estimatedHours ?? 0), 0);
+  const doneEstimate = doneToday.reduce((sum, m) => sum + (m.estimatedHours ?? 0), 0);
+  const doneReal = doneToday.reduce((sum, m) => sum + m.realHours, 0);
   const rewards: Record<string, Reward> = Object.fromEntries(open.map((m) => [m.id, m.reward]));
   const { todayTotals: day, streak, boss, week, month } = state;
   const dayTotal = Math.max(day.min, open.length + day.count);
@@ -112,8 +117,19 @@ async function QuestsContent({ searchParams }: Pick<PageProps<"/quests">, "searc
               {atStake > 0 && <> · {formatCOP(atStake)} en juego</>}
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex flex-col gap-2">
             <Meter value={day.count} max={dayTotal} label="Misiones de hoy" tone={day.goalMet ? "success" : "primary"} />
+            {(pendingHours > 0 || doneReal > 0 || doneEstimate > 0) && (
+              <p className="flex flex-wrap gap-x-3 text-xs text-muted-foreground tabular-nums">
+                {pendingHours > 0 && <span>⏳ ~{formatDuration(pendingHours)} por hacer</span>}
+                {(doneReal > 0 || doneEstimate > 0) && (
+                  <span className={cn(doneEstimate > 0 && doneReal > doneEstimate + 0.005 && "text-destructive")}>
+                    ⏱️ {formatDuration(doneReal)} reales
+                    {doneEstimate > 0 && ` de ~${formatDuration(doneEstimate)} estimadas`}
+                  </span>
+                )}
+              </p>
+            )}
           </CardContent>
         </Card>
 

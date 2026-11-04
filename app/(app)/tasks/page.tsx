@@ -19,7 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { VoiceDictation } from "@/components/voice/voice-dictation";
 import { requireUser } from "@/lib/auth";
 import { todayCO } from "@/lib/dates";
-import { listProjectOptions } from "@/lib/data/projects";
+import { listProjectOptions, listProjectRates } from "@/lib/data/projects";
 import { listRecurring } from "@/lib/data/recurring";
 import { listTasks, TASK_VIEWS, type TaskView } from "@/lib/data/tasks";
 
@@ -59,7 +59,7 @@ export default function TasksPage({ searchParams }: PageProps<"/tasks">) {
 /** Dictado por voz: lo dictado sin fecha cae en la bandeja de entrada. */
 async function TasksDictation() {
   await requireUser();
-  const projects = await listProjectOptions();
+  const projects = await listProjectRates();
   return <VoiceDictation projects={projects} today={todayCO()} />;
 }
 

@@ -9,6 +9,7 @@ import type { QuestGoal } from "@/lib/quests/goals";
 import { isMission, makeRewardResolver, type Reward } from "@/lib/quests/reward";
 import { buildQuestState, type QuestState } from "@/lib/quests/state";
 import { DEFAULT_QUEST_SETTINGS, type QuestSettings } from "@/lib/quests/streak";
+import { realHours } from "@/lib/tasks/hours";
 import { groupTodayTasks } from "@/lib/tasks/today";
 
 type Supabase = Awaited<ReturnType<typeof requireUser>>["supabase"];
@@ -29,7 +30,7 @@ async function readAll<T>(
 }
 
 const DONE_SELECT =
-  "id, title, status, completed_at, planned_on, estimated_hours, project_id, ticket_id, kind, auto_source, priority, logged:time_entries(hours, deleted_at), project:projects(id, name, code_prefix, color)";
+  "id, title, status, completed_at, planned_on, estimated_hours, spent_hours, project_id, ticket_id, kind, auto_source, priority, logged:time_entries(hours, deleted_at), project:projects(id, name, code_prefix, color)";
 
 export type MissionView = {
   id: string;
@@ -39,6 +40,9 @@ export type MissionView = {
   group: "overdue" | "myDay" | "dueToday" | "done";
   project: TaskWithProject["project"];
   reward: Reward;
+  /** Horas estimadas y reales (registradas + informadas) de la misión. */
+  estimatedHours: number | null;
+  realHours: number;
   task?: TaskWithProject;
 };
 
@@ -133,6 +137,8 @@ async function loadQuestData(supabase: Supabase, today: ISODate): Promise<QuestD
       group: "done",
       project: task.project,
       reward,
+      estimatedHours: task.estimated_hours != null ? Number(task.estimated_hours) : null,
+      realHours: realHours(task),
     }));
 
   return {
@@ -161,6 +167,8 @@ export async function getQuestPage(today: ISODate): Promise<QuestPage> {
       group,
       project: task.project,
       reward: data.resolve(task),
+      estimatedHours: task.estimated_hours != null ? Number(task.estimated_hours) : null,
+      realHours: realHours(task),
       task,
     })),
   );

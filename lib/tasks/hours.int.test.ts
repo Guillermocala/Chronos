@@ -57,4 +57,36 @@ describe("horas de tareas (SQL)", () => {
     );
     expect(Number(h.direct_logged)).toBe(1.5);
   });
+
+  it("corregir horas reales: soft delete de los registros y uno nuevo con el total", async () => {
+    const [t] = await asUser<{ id: string }>(
+      db,
+      U1,
+      "insert into tasks (title, project_id) values ('Demo', $1) returning id",
+      [projectId],
+    );
+    for (const hours of [1, 2]) {
+      await asUser(
+        db,
+        U1,
+        "insert into time_entries (project_id, task_id, started_at, ended_at, hours) values ($1, $2, now(), now(), $3)",
+        [projectId, t.id, hours],
+      );
+    }
+    // Lo mismo que hace setTaskRealHours.
+    await asUser(db, U1, "update time_entries set deleted_at = now() where task_id = $1 and deleted_at is null", [t.id]);
+    await asUser(
+      db,
+      U1,
+      "insert into time_entries (project_id, task_id, started_at, ended_at, hours) values ($1, $2, now(), now(), 2.5)",
+      [projectId, t.id],
+    );
+    const live = await asUser<{ hours: string }>(
+      db,
+      U1,
+      "select hours from time_entries where task_id = $1 and deleted_at is null",
+      [t.id],
+    );
+    expect(live.map((e) => Number(e.hours))).toEqual([2.5]);
+  });
 });

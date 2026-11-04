@@ -31,6 +31,21 @@ export async function listTodayCandidates(today: ISODate): Promise<TaskWithProje
   return data;
 }
 
+/** Tareas completadas hoy (hora de Colombia), para el resumen estimado vs real. */
+export async function listDoneToday(today: ISODate): Promise<TaskWithProject[]> {
+  const { supabase } = await requireUser();
+  const { data, error } = await supabase
+    .from("tasks")
+    .select(TASK_SELECT)
+    .is("deleted_at", null)
+    .eq("status", "done")
+    .is("auto_source", null)
+    .gte("completed_at", `${today}T00:00:00-05:00`)
+    .lt("completed_at", `${addDays(today, 1)}T00:00:00-05:00`);
+  if (error) throw error;
+  return data;
+}
+
 export type TaskFilters = {
   view: TaskView;
   /** id de proyecto, "personal" (sin proyecto) o undefined (todos). */

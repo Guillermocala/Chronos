@@ -129,6 +129,52 @@ describe("listas dictadas", () => {
   });
 });
 
+describe("bloques de proyecto", () => {
+  it("decir el proyecto una vez lo asigna a las tareas siguientes hasta cambiarlo", () => {
+    const items = summary(
+      "proyecto web. ajustar formulario dos horas. revisar menú. proyecto acme. enviar propuesta. personal. llamar al contador",
+    );
+    expect(items.map((i) => [i.title, i.project, i.hours])).toEqual([
+      ["Ajustar formulario", "WEB", 2],
+      ["Revisar menú", "WEB", null],
+      ["Enviar propuesta", "ACM", null],
+      ["Llamar al contador", null, null],
+    ]);
+    expect(items.flatMap((i) => i.warnings)).toEqual([]);
+  });
+
+  it("el proyecto dicho en la línea manda sobre el bloque", () => {
+    const items = summary("proyecto web. ajustar formulario. enviar factura del proyecto acme. revisar menú");
+    expect(items.map((i) => i.project)).toEqual(["WEB", "ACM", "WEB"]);
+  });
+
+  it("acepta encabezados escritos: @WEB, WEB: y nombre con dos puntos", () => {
+    expect(summary("@WEB\najustar formulario\nACM: enviar propuesta\nrevisar contrato").map((i) => [i.title, i.project])).toEqual([
+      ["Ajustar formulario", "WEB"],
+      ["Enviar propuesta", "ACM"],
+      ["Revisar contrato", "ACM"],
+    ]);
+    expect(summary("Sitio web: ajustar menú").map((i) => i.project)).toEqual(["WEB"]);
+  });
+
+  it("un bloque personal ignora el proyecto por defecto de la página", () => {
+    const items = summary("revisar menú. personal. llamar al contador", { defaultProjectId: "p-web" });
+    expect(items.map((i) => i.project)).toEqual(["WEB", null]);
+  });
+
+  it("un proyecto desconocido abre el bloque y avisa en cada tarea", () => {
+    const items = summary("proyecto zeta. preparar demo");
+    expect(items).toHaveLength(1);
+    expect(items[0].title).toBe("Preparar demo");
+    expect(items[0].warnings).toEqual(["El proyecto @ZETA no existe."]);
+  });
+
+  it("frases que solo mencionan un proyecto dentro de la tarea no abren bloque", () => {
+    const items = summary("revisar la propuesta del proyecto web. llamar al contador");
+    expect(items.map((i) => i.project)).toEqual(["WEB", null]);
+  });
+});
+
 describe("limpieza", () => {
   it("quita muletillas y conectores", () => {
     expect(normalizeSpoken("eh bueno tengo que revisar los correos", ctx).lines).toEqual([

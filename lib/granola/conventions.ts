@@ -48,6 +48,11 @@ export type Marker = { marker: string; meaning: string; example: string };
 
 export const MARKERS: Marker[] = [
   { marker: "@PREFIJO", meaning: "Proyecto, por su prefijo de tickets", example: "@WEB" },
+  {
+    marker: "### @PREFIJO",
+    meaning: "Subtítulo dentro de una sección: los ítems siguientes van a ese proyecto (### Personal lo quita)",
+    example: "### @WEB",
+  },
   { marker: "!fecha", meaning: "Fecha límite (sin espacios: usa guiones)", example: "!mañana · !viernes · !25/10" },
   { marker: "#alta / #media / #baja", meaning: "Prioridad (por defecto media)", example: "#alta" },
   { marker: "#etiqueta", meaning: "Cualquier otra etiqueta libre", example: "#personal #admin" },
@@ -147,5 +152,7 @@ date: AAAA-MM-DD
 - (esperando: Nombre) cuando espero algo de alguien.
 - ~3h cuando mencione horas estimadas.
 - Los enlaces de Google Docs o Drive completos, tal cual.
+
+4. Si dicté varios ítems seguidos del mismo proyecto ("proyecto web… tal cosa, tal otra"), agrúpalos bajo un subtítulo "### @PREFIJO" dentro de la sección, en vez de repetir @PREFIJO en cada línea. Usa "### Personal" para los que no son de ningún proyecto.
 
 No inventes fechas, proyectos ni prioridades que no haya dicho. No agregues texto fuera de las secciones.`;

@@ -11,7 +11,7 @@ import { VoiceDictationPanel } from "@/components/voice/voice-dictation";
 import { requireUser } from "@/lib/auth";
 import { todayCO } from "@/lib/dates";
 import { listExternalLinks } from "@/lib/data/external";
-import { listProjectOptions } from "@/lib/data/projects";
+import { listProjectRates } from "@/lib/data/projects";
 
 export const metadata: Metadata = { title: "Importar · Chronos" };
 
@@ -49,7 +49,7 @@ async function ImportContent({ searchParams }: Pick<PageProps<"/import">, "searc
   const params = await searchParams;
   const requested = param(params.tab);
   const tab = TABS.find((t) => t === requested) ?? "granola";
-  const [projects, ledenLinks] = await Promise.all([listProjectOptions(), listExternalLinks("leden")]);
+  const [projects, ledenLinks] = await Promise.all([listProjectRates(), listExternalLinks("leden")]);
   const today = todayCO();
   return (
     <Tabs defaultValue={tab}>

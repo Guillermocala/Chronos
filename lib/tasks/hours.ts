@@ -16,9 +16,33 @@ export function realHours(task: Omit<HoursTask, "estimated_hours" | "project_id"
   return Math.round((logged + Number(task.spent_hours ?? 0)) * 100) / 100;
 }
 
-/** Sin estimado ni horas: al completarla se pregunta cuánto tomó. */
-export function needsHoursOnComplete(task: HoursTask): boolean {
-  return task.estimated_hours == null && realHours(task) === 0;
+const round2 = (n: number) => Math.round(n * 100) / 100;
+
+/**
+ * Horas que se registran al completar si no se escribe nada ("Omitir"):
+ * lo que falte para llegar al estimado. Null si no hay estimado o ya se cubrió.
+ */
+export function defaultCompletionHours(task: HoursTask): number | null {
+  if (task.estimated_hours == null) return null;
+  const missing = round2(Number(task.estimated_hours) - realHours(task));
+  return missing > 0 ? missing : null;
+}
+
+export type RealHoursEdit =
+  | { kind: "none" }
+  /** Personal: nuevo `spent_hours` (null = sin horas). */
+  | { kind: "spent"; spent_hours: number | null }
+  /** Proyecto: se reemplazan los registros de la tarea por uno con el total (null = sin registro). */
+  | { kind: "replace"; project_id: string; hours: number | null };
+
+/** Corregir el total de horas reales desde el editor de la tarea. */
+export function planRealHoursEdit(task: HoursTask, total: number | null): RealHoursEdit {
+  const target = total != null && total > 0 ? round2(total) : 0;
+  if (Math.abs(target - realHours(task)) < 0.005) return { kind: "none" };
+  if (task.project_id) return { kind: "replace", project_id: task.project_id, hours: target > 0 ? target : null };
+  const logged = realHours({ logged: task.logged, spent_hours: null });
+  const spent = round2(target - logged);
+  return { kind: "spent", spent_hours: spent > 0 ? spent : null };
 }
 
 export type CompletionHours =

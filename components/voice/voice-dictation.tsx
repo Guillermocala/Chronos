@@ -49,7 +49,7 @@ type PanelProps = {
 
 const TITLE = "Dictar tareas";
 const DESCRIPTION =
-  "Di qué vas a hacer y cuánto te toma, por ejemplo: “revisar la propuesta del proyecto web, dos horas, y luego llamar al contador, media hora”.";
+  "Di el proyecto y luego sus tareas, por ejemplo: “proyecto web… revisar la propuesta, dos horas… ajustar el menú… personal… llamar al contador, media hora”.";
 
 /** Botón "Dictar" que abre el panel: hoja inferior en el celular, diálogo en escritorio. */
 export function VoiceDictation({
@@ -185,7 +185,7 @@ export function VoiceDictationPanel({
                   Escuchando… pulsa de nuevo para terminar.
                 </span>
               ) : (
-                "Pulsa el micrófono y habla. Cada pausa larga separa un ítem."
+                "Pulsa el micrófono y habla. Cada pausa larga separa un ítem; di “proyecto X” y las siguientes tareas irán a ese proyecto."
               )}
             </p>
           </div>
@@ -198,7 +198,7 @@ export function VoiceDictationPanel({
               enterKeyHint="done"
               value={text}
               onChange={(e) => speech.setTranscript(e.target.value)}
-              placeholder="Para mi día de hoy voy a revisar la propuesta del proyecto web, dos horas…"
+              placeholder={"Proyecto web\nRevisar la propuesta, dos horas\nAjustar el menú\nPersonal\nLlamar al contador, media hora"}
               className="min-h-32 text-base sm:text-sm"
             />
             {speech.interim && (
@@ -206,7 +206,10 @@ export function VoiceDictationPanel({
                 {speech.interim}…
               </p>
             )}
-            <FieldDescription>Puedes corregir el texto antes de revisar.</FieldDescription>
+            <FieldDescription>
+              Puedes corregir el texto antes de revisar. Una línea con solo el proyecto (“proyecto web”, “WEB:”, “@WEB” o
+              “personal”) agrupa las tareas que siguen.
+            </FieldDescription>
           </Field>
 
           <Field orientation="horizontal">

@@ -38,8 +38,8 @@ import { useAction } from "@/hooks/use-action-toast";
 import { daysBetween, type ISODate } from "@/lib/dates";
 import type { TaskWithProject } from "@/lib/data/tasks";
 import { relativeDay } from "@/lib/format";
-import { isMission, type Reward } from "@/lib/quests/reward";
-import { needsHoursOnComplete, realHours } from "@/lib/tasks/hours";
+import type { Reward } from "@/lib/quests/reward";
+import { defaultCompletionHours, realHours } from "@/lib/tasks/hours";
 import { formatDuration } from "@/lib/time";
 import { cn } from "@/lib/utils";
 
@@ -65,8 +65,11 @@ export function TaskItem({ task, today, projects, reward }: Props) {
   const inMyDay = task.planned_on !== null && daysBetween(task.planned_on, today) >= 0;
   const waitingDays = daysBetween(task.created_at.slice(0, 10), today);
   const loggedHours = realHours(task);
-  // Sin estimado ni horas: al completarla se pregunta cuánto tomó (cronómetro externo).
-  const askHours = isMission(task) && needsHoursOnComplete(task);
+  const estimate = task.estimated_hours != null ? Number(task.estimated_hours) : null;
+  const overEstimate = estimate !== null && loggedHours > estimate + 0.005;
+  // Al completarla se pregunta cuánto tomó (opcional: si no, se registra lo estimado).
+  // Las automáticas (entregas, cobros) no llevan horas.
+  const askHours = !task.auto_source;
 
   return (
     <li
@@ -114,16 +117,25 @@ export function TaskItem({ task, today, projects, reward }: Props) {
             </Badge>
           )}
           {inMyDay && !done && <Badge variant="secondary">Mi día</Badge>}
-          {task.estimated_hours != null && (
-            <Badge variant="outline" title="Horas estimadas">
-              ~{formatDuration(task.estimated_hours)}
-            </Badge>
-          )}
-          {loggedHours > 0 && (
-            <Badge variant="secondary" title="Horas registradas">
+          {loggedHours > 0 ? (
+            <Badge
+              variant={overEstimate ? "destructive" : "secondary"}
+              title={
+                estimate !== null
+                  ? `Real ${formatDuration(loggedHours)} / estimado ${formatDuration(estimate)}`
+                  : "Horas reales"
+              }
+            >
               <TimerIcon data-icon="inline-start" />
               {formatDuration(loggedHours)}
+              {estimate !== null && ` / ~${formatDuration(estimate)}`}
             </Badge>
+          ) : (
+            estimate !== null && (
+              <Badge variant="outline" title="Horas estimadas">
+                ~{formatDuration(estimate)}
+              </Badge>
+            )
           )}
           {task.is_ticket_candidate && <Badge variant="outline">Convertir a ticket</Badge>}
           {task.recurring_task_id && (
@@ -195,6 +207,7 @@ export function TaskItem({ task, today, projects, reward }: Props) {
           title={task.title}
           projectCode={task.project?.code_prefix}
           rate={reward?.rate}
+          fallbackHours={defaultCompletionHours(task)}
           open={completing}
           onOpenChange={setCompleting}
         />

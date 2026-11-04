@@ -91,14 +91,17 @@ Chronos es un gestor personal de tickets, sprints y valor en COP por proyecto. L
     - secciones `## Tareas`, `## Seguimientos`, `## Tickets` y `## Notas`;
     - marcadores `@PREFIJO`, `!fecha`, `#prioridad`, `~3h`, `(esperando: X)` y enlaces de Drive;
   - el parser está en `lib/granola/parse.ts`; "+ Tarea" acepta los mismos marcadores;
+  - un subtítulo `### @PREFIJO` (o `### Proyecto X`, `### Personal`) dentro de una sección asigna ese proyecto a los ítems siguientes que no traigan su propio `@`;
   - `/guide` tiene las instrucciones para Granola, las plantillas y un probador;
   - `/import` muestra una vista previa editable (`components/granola/dictation-review.tsx`, compartida con el dictado por voz), guarda la nota en `meeting_notes` y crea los ítems. Las líneas de Tickets quedan como tareas `is_ticket_candidate` hasta la fase de tickets.
 - **Dictado por voz en Chronos** (costo 0, todo en el navegador):
   - `hooks/use-speech-recognition.ts` usa la Web Speech API (`es-CO`). El audio lo procesa el navegador (Google en Chrome/Edge, Apple en Safari), nunca Vercel. Firefox no la soporta: el panel deja escribir el texto;
   - `lib/voice/normalize.ts` convierte lenguaje hablado en los marcadores de Granola ("dos horas" → `~2h`, "del proyecto web" → `@WEB`, "el viernes" → `!viernes`) y `parseLine` los interpreta. El vocabulario y los ejemplos de la guía viven en `lib/voice/vocabulary.ts` (con test de sincronía);
+  - **bloques de proyecto** (`detectProjectHeader`): un segmento que solo nombra un proyecto ("proyecto web", "@WEB", "WEB:", o "personal" para ninguno) abre un bloque y las tareas siguientes heredan ese proyecto hasta el siguiente encabezado. El proyecto dicho dentro de la línea manda sobre el bloque. Los saltos de línea del texto escrito separan tareas;
+  - la vista previa agrupa los ítems por proyecto con conteo, horas estimadas y "≈ $X" (tarifa de `listProjectRates`);
   - `components/voice/voice-dictation.tsx`: hoja inferior en el celular (< 768 px), diálogo en escritorio; pasos Dictar → Revisar bajo 1024 px y lado a lado desde 1024 px;
   - está en Hoy (entra a Mi día; `/today?dictate=1` lo abre), Tareas (lo que no tiene fecha va a la bandeja), Proyecto → Tareas (proyecto preasignado) e Importar ("Dictar aquí");
-  - guarda con `importDictation` y `source = 'voice'` en `meeting_notes`. Hoy muestra el total estimado de Mi día y cada tarea su `~N h`;
+  - guarda con `importDictation` y `source = 'voice'` en `meeting_notes`;
   - pendiente para la PWA: atajo "Dictar" en el manifest y verificar el permiso de micrófono en modo instalado.
 - **Cargar datos de otras plataformas** (Importar → "Cargar datos", o "Cargar datos ▾" en Tareas; `/import?tab=data&format=leden`):
   - Chronos es la fuente principal; la plataforma empresarial (Leden Company) es de soporte. Su "Informe de actividad" en PDF se carga para tener las mismas actividades y horas en ambos lados;
@@ -136,7 +139,8 @@ Chronos es un gestor personal de tickets, sprints y valor en COP por proyecto. L
     - el aviso dice "¡Hecho! +$X", día cumplido, jefe derrotado y logros nuevos;
     - `ActionResult.celebrate` lanza el confeti CSS (`components/quests/celebration.tsx`), que no aparece con "reducir movimiento";
     - si las tablas fallan, queda el "¡Hecho!" de siempre;
-  - **Hoy** muestra el chip "+$X" en Vencido, Mi día y Vence hoy (`getTaskRewards`).
+  - **Hoy** muestra el chip "+$X" en Vencido, Mi día y Vence hoy (`getTaskRewards`);
+  - **resumen del día:** la tarjeta "Hoy" de Misiones muestra las horas estimadas por hacer y las reales frente a las estimadas de lo completado hoy. En /today, "Mi día · por hacer" (valor + horas estimadas) y "Hecho hoy" (horas reales, estimadas y valor; `listDoneToday`).
   - **Valor:** una tarea pendiente vale su estimado. Una completada con horas registradas vale las horas reales.
 - **Nueva tarea** (`components/tasks/quick-add-dialog.tsx`), con dos pestañas (se recuerda la última):
   - **Rápida:** una línea con marcadores Granola;
@@ -145,12 +149,13 @@ Chronos es un gestor personal de tickets, sprints y valor en COP por proyecto. L
     - las horas estimadas son opcionales;
     - "Más opciones" agrupa etiquetas, Drive y notas;
     - muestra "≈ Ganas +$X" con la tarifa de `listProjectRates`.
-- **Horas al completar** (el cronómetro de la tarea es externo):
-  - una misión sin estimado ni horas abre "¿Cuántas horas te tomó?" (`complete-task-dialog.tsx` → `completeTask`);
+- **Horas reales** (el cronómetro de la tarea es externo; real = `realHours`: registros + `spent_hours`):
+  - completar cualquier tarea (salvo las automáticas) abre "¿Cuánto te tomó?" (`complete-task-dialog.tsx` → `completeTask`). Es opcional: vacío, "Omitir", Esc o clic afuera completan y registran lo que falte para el estimado (`defaultCompletionHours`); sin estimado, no se registran horas;
   - **tarea de proyecto:** las horas van a `time_entries` con `task_id`, directo al proyecto, y cuentan en Horas y OPS;
   - **tarea personal:** van a `tasks.spent_hours`, que es solo un registro;
-  - la lógica está en `lib/tasks/hours.ts`;
-  - editar una tarea hecha permite agregar horas (`add_hours`).
+  - el editor de la tarea tiene "Horas reales" (total). Solo se envía si se cambió (`real_hours`): en proyecto hace soft delete de los registros de la tarea y crea uno con el total; en personal ajusta `spent_hours` (`planRealHoursEdit`);
+  - cada tarea muestra "real / ~estimado", en rojo si se pasó;
+  - la lógica está en `lib/tasks/hours.ts`.
 - **Reportes** (fase 5):
   - `/reports`: cobros por mes, horas por semana, horas y tarifa por proyecto. Usa Recharts mediante el `chart` de shadcn, con los colores `--chart-1..5` validados con la skill dataviz y una tabla equivalente debajo de cada gráfica;
   - burndown en el tablero del sprint;

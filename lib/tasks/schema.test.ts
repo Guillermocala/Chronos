@@ -24,15 +24,16 @@ describe("crear tarea", () => {
 });
 
 describe("editar tarea", () => {
-  it("acepta horas estimadas y horas que tomó", () => {
-    const t = taskUpdateSchema.parse({
-      ...base,
-      id: "11111111-1111-4111-8111-111111111111",
-      status: "done",
-      estimated_hours: "2h",
-      add_hours: "45m",
-    });
+  const id = "11111111-1111-4111-8111-111111111111";
+
+  it("acepta horas estimadas y horas reales", () => {
+    const t = taskUpdateSchema.parse({ ...base, id, status: "done", estimated_hours: "2h", real_hours: "2:45" });
     expect(t.estimated_hours).toBe(2);
-    expect(t.add_hours).toBe(0.75);
+    expect(t.real_hours).toBe(2.75);
+  });
+
+  it("horas reales: ausente no se toca, vacío las borra", () => {
+    expect(taskUpdateSchema.parse({ ...base, id, status: "open" }).real_hours).toBeUndefined();
+    expect(taskUpdateSchema.parse({ ...base, id, status: "open", real_hours: "" }).real_hours).toBeNull();
   });
 });

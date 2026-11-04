@@ -117,6 +117,31 @@ describe("parseDictation", () => {
     expect(result.items[0]).toMatchObject({ planned_on: null, due_date: "2026-10-21" });
   });
 
+  it("subtítulos ### @PREFIJO agrupan los ítems por proyecto", () => {
+    const md = [
+      "# Mi día — 2026-10-23",
+      "## Tareas",
+      "### @WEB",
+      "- [ ] Ajustar formulario ~2h",
+      "- [ ] Enviar factura @ACM",
+      "### Proyecto ACM",
+      "- [ ] Revisar contrato",
+      "### Personal",
+      "- [ ] Llamar al contador",
+      "## Seguimientos",
+      "- [ ] Respuesta de Ana (esperando: Ana)",
+    ].join("\n");
+    const { items } = parseDictation(md, ctx);
+    expect(items.map((i) => [i.title, i.projectPrefix, i.type])).toEqual([
+      ["Ajustar formulario", "WEB", "task"],
+      ["Enviar factura", "ACM", "task"],
+      ["Revisar contrato", "ACM", "task"],
+      ["Llamar al contador", null, "task"],
+      ["Respuesta de Ana", null, "follow_up"],
+    ]);
+    expect(items.flatMap((i) => i.warnings)).toEqual([]);
+  });
+
   it("sin secciones solo toma casillas", () => {
     const result = parseDictation(
       ["Notas sueltas", "- una idea", "- [ ] Una tarea real", "1. [ ] Otra numerada"].join("\n"),

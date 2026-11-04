@@ -81,6 +81,12 @@ export const VOICE_EXAMPLES: VoiceExample[] = [
     result: "2 tareas en Mi día: “Revisar la propuesta” (WEB, ~2 h) y “Llamar al contador” (~30 min).",
   },
   {
+    spoken:
+      "Proyecto web. Ajustar el formulario, dos horas. Revisar el menú. Proyecto acme. Enviar la propuesta. Personal. Llamar al contador.",
+    result:
+      "Bloques por proyecto: 2 tareas en WEB, 1 en ACM y 1 personal, sin elegir el proyecto en cada una. También sirve escribir “WEB:” o “@WEB” en su propia línea.",
+  },
+  {
     spoken: "Enviar la cuenta de cobro para el viernes, prioridad alta.",
     result: "Tarea con fecha límite el próximo viernes y prioridad alta.",
   },
