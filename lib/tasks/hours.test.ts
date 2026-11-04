@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  appendCompletionNote,
   defaultCompletionHours,
   planCompletionHours,
   planRealHoursEdit,
   realHours,
+  stepHours,
   type HoursTask,
 } from "./hours";
 
@@ -54,5 +56,30 @@ describe("horas de una tarea", () => {
       project_id: "p1",
       hours: null,
     });
+  });
+});
+
+describe("ajuste con − / +", () => {
+  it("suma y resta 15 min sobre el cuarto de hora más cercano", () => {
+    expect(stepHours(1, 1)).toBe(1.25);
+    expect(stepHours(1.5, -1)).toBe(1.25);
+    expect(stepHours(1.1, 1)).toBe(1.25);
+    expect(stepHours(null, 1)).toBe(0.25);
+    expect(stepHours(0.25, -1)).toBe(0.25);
+    expect(stepHours(24, 1)).toBe(24);
+  });
+});
+
+describe("nota al completar", () => {
+  it("se agrega al final con la fecha", () => {
+    expect(appendCompletionNote(null, "Listo el informe", "2026-11-04")).toBe("— Al completar (mié, 4 de nov): Listo el informe");
+    expect(appendCompletionNote("Contexto previo\n", "Hecho", "2026-11-04")).toBe(
+      "Contexto previo\n\n— Al completar (mié, 4 de nov): Hecho",
+    );
+  });
+
+  it("texto en blanco no cambia nada", () => {
+    expect(appendCompletionNote("Previo", "   ", "2026-11-04")).toBe("Previo");
+    expect(appendCompletionNote(null, undefined, "2026-11-04")).toBeNull();
   });
 });

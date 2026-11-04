@@ -11,8 +11,14 @@ import { questMessage } from "@/lib/quests/messages";
 import { addDays, todayCO } from "@/lib/dates";
 import { formatShortDate } from "@/lib/format";
 import { parseLine } from "@/lib/granola/parse";
-import { defaultCompletionHours, planCompletionHours, planRealHoursEdit } from "@/lib/tasks/hours";
-import { taskCreateSchema, taskUpdateSchema } from "@/lib/tasks/schema";
+import type { TablesUpdate } from "@/lib/supabase/database.types";
+import {
+  appendCompletionNote,
+  defaultCompletionHours,
+  planCompletionHours,
+  planRealHoursEdit,
+} from "@/lib/tasks/hours";
+import { driveLink, taskCreateSchema, taskUpdateSchema } from "@/lib/tasks/schema";
 import { formatDuration } from "@/lib/time";
 
 // Las tareas aparecen en Hoy, Tareas y el detalle de proyecto: se refresca todo.
@@ -92,7 +98,7 @@ async function recordTaskHours(
   supabase: Supabase,
   taskId: string,
   hours: number | null,
-  { useEstimate = false } = {},
+  { useEstimate = false, note = null }: { useEstimate?: boolean; note?: string | null } = {},
 ): Promise<number | null> {
   if (hours == null && !useEstimate) return 0;
   const task = await loadHoursTask(supabase, taskId);
@@ -107,6 +113,7 @@ async function recordTaskHours(
       started_at: at,
       ended_at: at,
       hours: plan.hours,
+      note,
     });
     return entryError ? null : plan.hours;
   }
@@ -194,19 +201,46 @@ export async function updateTask(formData: FormData): Promise<ActionResult> {
 const idSchema = z.uuid();
 const completionHours = z.number().positive().max(24).nullable();
 
+const completionExtras = z
+  .object({
+    notes: z.string().trim().max(5000).optional(),
+    /** Ausente = no se toca el documento; vacío = se quita. */
+    doc: driveLink.optional(),
+  })
+  .optional();
+
+export type CompletionExtras = { notes?: string; doc?: string };
+
 /**
  * Completa una tarea registrando antes las horas que tomó. Sin horas
- * ("Omitir"), registra las estimadas que falten.
+ * ("Omitir"), registra las estimadas que falten. Las notas se agregan a las de
+ * la tarea (y al registro de horas si es de proyecto); el documento la reemplaza.
  */
-export async function completeTask(id: string, hours: number | null): Promise<ActionResult> {
+export async function completeTask(
+  id: string,
+  hours: number | null,
+  extras?: CompletionExtras,
+): Promise<ActionResult> {
   const { supabase } = await requireUser();
   if (!idSchema.safeParse(id).success) return fail("Tarea inválida.");
   if (!completionHours.safeParse(hours).success) return fail("Horas inválidas (máx. 24 h).");
+  const parsedExtras = completionExtras.safeParse(extras);
+  if (!parsedExtras.success) return fail(firstIssue(parsedExtras.error));
+  const note = parsedExtras.data?.notes || null;
+  const doc = parsedExtras.data?.doc;
 
   // Primero las horas: así el valor ganado ya usa las horas reales.
-  const recorded = await recordTaskHours(supabase, id, hours, { useEstimate: true });
+  const recorded = await recordTaskHours(supabase, id, hours, { useEstimate: true, note });
   if (recorded === null) return fail("No se pudieron registrar las horas.");
-  const { error } = await supabase.from("tasks").update({ status: "done" }).eq("id", id);
+
+  const changes: TablesUpdate<"tasks"> = { status: "done" };
+  if (note) {
+    const { data: current, error: notesError } = await supabase.from("tasks").select("notes").eq("id", id).single();
+    if (notesError) return fail("No se pudo completar la tarea.");
+    changes.notes = appendCompletionNote(current.notes, note, todayCO());
+  }
+  if (doc) Object.assign(changes, doc);
+  const { error } = await supabase.from("tasks").update(changes).eq("id", id);
   if (error) return fail("No se pudo completar la tarea.");
   refresh();
 

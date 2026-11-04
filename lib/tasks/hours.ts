@@ -1,5 +1,7 @@
 // Horas reales de una tarea y qué hacer con las horas que se informan al completarla.
 
+import type { ISODate } from "@/lib/dates";
+import { formatShortDate } from "@/lib/format";
 import type { Tables } from "@/lib/supabase/database.types";
 
 export type HoursTask = Pick<Tables<"tasks">, "estimated_hours" | "spent_hours" | "project_id"> & {
@@ -26,6 +28,25 @@ export function defaultCompletionHours(task: HoursTask): number | null {
   if (task.estimated_hours == null) return null;
   const missing = round2(Number(task.estimated_hours) - realHours(task));
   return missing > 0 ? missing : null;
+}
+
+/** Botones − / + del diálogo: lleva al cuarto de hora y suma o resta 15 min (0,25 h … 24 h). */
+export function stepHours(current: number | null, delta: 1 | -1): number {
+  const quarters = Math.round((current ?? 0) * 4);
+  const next = (quarters + delta) / 4;
+  return Math.min(24, Math.max(0.25, next));
+}
+
+/** Agrega la nota escrita al completar al final de las notas de la tarea, con la fecha. */
+export function appendCompletionNote(
+  existing: string | null,
+  note: string | null | undefined,
+  date: ISODate,
+): string | null {
+  const text = note?.trim();
+  if (!text) return existing;
+  const entry = `— Al completar (${formatShortDate(date)}): ${text}`;
+  return existing?.trim() ? `${existing.trimEnd()}\n\n${entry}` : entry;
 }
 
 export type RealHoursEdit =

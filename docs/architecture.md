@@ -155,6 +155,10 @@ Chronos es un gestor personal de tickets, sprints y valor en COP por proyecto. L
   - completar cualquier tarea (salvo las automáticas) abre "¿Cuánto te tomó?" (`complete-task-dialog.tsx` → `completeTask`). Es opcional: vacío, "Omitir", Esc o clic afuera completan y registran lo que falte para el estimado (`defaultCompletionHours`); sin estimado, no se registran horas;
   - **tarea de proyecto:** las horas van a `time_entries` con `task_id`, directo al proyecto, y cuentan en Horas y OPS;
   - **tarea personal:** van a `tasks.spent_hours`, que es solo un registro;
+  - el diálogo tiene botones − / + de 15 min (`stepHours`; parten del estimado si el campo está vacío) y "Más opciones":
+    - **notas**: se agregan al final de `tasks.notes` con la fecha (`appendCompletionNote`) y, en tareas de proyecto, van en `time_entries.note`;
+    - **documento de Drive**: reemplaza `doc_url`/`doc_kind` (vacío lo quita; solo se envía si cambió);
+    - se envían con "Completar" y "Omitir", no al cerrar con Esc o clic afuera;
   - el editor de la tarea tiene "Horas reales" (total). Solo se envía si se cambió (`real_hours`): en proyecto hace soft delete de los registros de la tarea y crea uno con el total; en personal ajusta `spent_hours` (`planRealHoursEdit`);
   - cada tarea muestra "real / ~estimado", en rojo si se pasó;
   - la lógica está en `lib/tasks/hours.ts`.

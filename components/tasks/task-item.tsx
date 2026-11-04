@@ -187,6 +187,7 @@ export function TaskItem({ task, today, projects, reward }: Props) {
           projectCode={task.project?.code_prefix}
           rate={reward?.rate}
           fallbackHours={defaultCompletionHours(task)}
+          currentDoc={task.doc_url}
           open={completing}
           onOpenChange={setCompleting}
         />
