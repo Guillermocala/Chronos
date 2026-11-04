@@ -78,3 +78,19 @@ describe("filtro por fecha (Tareas)", () => {
     expect(matchesWhen(t, "overdue", today)).toBe(false);
   });
 });
+
+describe("orden manual de Mi día", () => {
+  it("respeta day_position y deja al final lo que no tiene, por prioridad", () => {
+    const a = task({ planned_on: today, day_position: 2000, priority: 3 });
+    const b = task({ planned_on: today, day_position: 1000, priority: 3 });
+    const c = task({ planned_on: today, priority: 1 });
+    const d = task({ planned_on: today, priority: 2 });
+    expect(ids(groupTodayTasks([c, a, d, b], today).myDay)).toEqual([b.id, a.id, c.id, d.id]);
+  });
+
+  it("los otros grupos siguen por prioridad", () => {
+    const low = task({ due_date: today, priority: 3, day_position: 1 });
+    const high = task({ due_date: today, priority: 1, day_position: 2 });
+    expect(ids(groupTodayTasks([low, high], today).dueToday)).toEqual([high.id, low.id]);
+  });
+});

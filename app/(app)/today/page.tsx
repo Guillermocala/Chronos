@@ -9,6 +9,7 @@ import { GroupHeader } from "@/components/tasks/group-header";
 import { ProjectBadge } from "@/components/tasks/project-badge";
 import { QuickAddDialog } from "@/components/tasks/quick-add-dialog";
 import { TimerButton } from "@/components/tickets/timer-button";
+import { SortableTaskList } from "@/components/tasks/sortable-task-list";
 import { TaskList } from "@/components/tasks/task-list";
 import { VoiceDictation } from "@/components/voice/voice-dictation";
 import { Badge } from "@/components/ui/badge";
@@ -175,7 +176,11 @@ async function TodayContent({ searchParams }: Pick<PageProps<"/today">, "searchP
                 summary={summarizeTasks(groups[group.key], rewards)}
                 tone={group.key === "overdue" ? "destructive" : "default"}
               />
-              <TaskList tasks={groups[group.key]} today={today} projects={projects} rewards={rewards} />
+              {group.key === "myDay" ? (
+                <SortableTaskList tasks={groups.myDay} today={today} projects={projects} rewards={rewards} />
+              ) : (
+                <TaskList tasks={groups[group.key]} today={today} projects={projects} rewards={rewards} />
+              )}
             </section>
           ))}
         </div>

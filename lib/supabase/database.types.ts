@@ -652,6 +652,7 @@ export type Database = {
           auto_source: Database["public"]["Enums"]["task_auto_source"] | null
           completed_at: string | null
           created_at: string
+          day_position: number | null
           deleted_at: string | null
           doc_kind: Database["public"]["Enums"]["doc_kind"] | null
           doc_url: string | null
@@ -682,6 +683,7 @@ export type Database = {
           auto_source?: Database["public"]["Enums"]["task_auto_source"] | null
           completed_at?: string | null
           created_at?: string
+          day_position?: number | null
           deleted_at?: string | null
           doc_kind?: Database["public"]["Enums"]["doc_kind"] | null
           doc_url?: string | null
@@ -712,6 +714,7 @@ export type Database = {
           auto_source?: Database["public"]["Enums"]["task_auto_source"] | null
           completed_at?: string | null
           created_at?: string
+          day_position?: number | null
           deleted_at?: string | null
           doc_kind?: Database["public"]["Enums"]["doc_kind"] | null
           doc_url?: string | null

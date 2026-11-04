@@ -89,4 +89,20 @@ describe("horas de tareas (SQL)", () => {
     );
     expect(live.map((e) => Number(e.hours))).toEqual([2.5]);
   });
+
+  it("orden manual de Mi día: day_position nullable y editable", async () => {
+    const [t] = await asUser<{ id: string; day_position: number | null }>(
+      db,
+      U1,
+      "insert into tasks (title, planned_on) values ('Ordenar', current_date) returning id, day_position",
+    );
+    expect(t.day_position).toBeNull();
+    const [u] = await asUser<{ day_position: number }>(
+      db,
+      U1,
+      "update tasks set day_position = 1500 where id = $1 returning day_position",
+      [t.id],
+    );
+    expect(Number(u.day_position)).toBe(1500);
+  });
 });

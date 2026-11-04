@@ -10,6 +10,7 @@ import { MonthChart, WeeksChart } from "@/components/quests/progress-charts";
 import { QuestSettingsDialog } from "@/components/quests/settings-dialog";
 import { GroupHeader } from "@/components/tasks/group-header";
 import { QuickAddDialog } from "@/components/tasks/quick-add-dialog";
+import { SortableTaskList } from "@/components/tasks/sortable-task-list";
 import { TaskList } from "@/components/tasks/task-list";
 import { VoiceDictation } from "@/components/voice/voice-dictation";
 import { Badge } from "@/components/ui/badge";
@@ -49,6 +50,11 @@ const BOARD_GROUPS: { key: MissionView["group"]; title: string }[] = [
   { key: "myDay", title: "Mi día" },
   { key: "dueToday", title: "Vencen hoy" },
 ];
+
+/** Mi día se ordena a mano (arrastrar o Subir/Bajar); los demás grupos, por prioridad. */
+function ListFor({ group, ...props }: { group: MissionView["group"] } & Parameters<typeof TaskList>[0]) {
+  return group === "myDay" ? <SortableTaskList {...props} /> : <TaskList {...props} />;
+}
 
 /** Totales de un grupo de misiones para su encabezado. */
 function missionSummary(items: MissionView[]): GroupSummary {
@@ -213,7 +219,8 @@ async function QuestsContent({ searchParams }: Pick<PageProps<"/quests">, "searc
                       summary={missionSummary(items)}
                       tone={group.key === "overdue" ? "destructive" : "default"}
                     />
-                    <TaskList
+                    <ListFor
+                      group={group.key}
                       tasks={items.map((m) => m.task as TaskWithProject)}
                       today={today}
                       projects={projects}

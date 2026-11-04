@@ -4,7 +4,10 @@ import type { Tables } from "@/lib/supabase/database.types";
 export type TodayTask = Pick<
   Tables<"tasks">,
   "id" | "kind" | "status" | "due_date" | "planned_on" | "auto_source" | "priority"
->;
+> & {
+  /** Orden manual de Mi día (null = sin orden: al final, por prioridad). */
+  day_position?: number | null;
+};
 
 export type TodayGroupKey =
   | "overdue"
@@ -102,8 +105,11 @@ export function groupTodayTasks<T extends TodayTask>(
 
   const byPriorityThenDate = (a: T, b: T) =>
     a.priority - b.priority || (a.due_date ?? "9999").localeCompare(b.due_date ?? "9999");
+  // Mi día respeta el orden manual; lo que no tiene posición va al final.
+  const byDayPosition = (a: T, b: T) =>
+    (a.day_position ?? Infinity) - (b.day_position ?? Infinity) || byPriorityThenDate(a, b);
   for (const key of Object.keys(groups) as TodayGroupKey[]) {
-    groups[key].sort(byPriorityThenDate);
+    groups[key].sort(key === "myDay" ? byDayPosition : byPriorityThenDate);
   }
   return groups;
 }

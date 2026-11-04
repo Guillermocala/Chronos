@@ -3,6 +3,9 @@
 import {
   CalendarPlusIcon,
   CalendarXIcon,
+  ArrowDownIcon,
+  ArrowUpIcon,
+  ArrowUpToLineIcon,
   ClockIcon,
   EllipsisIcon,
   HourglassIcon,
@@ -11,7 +14,7 @@ import {
   Trash2Icon,
 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, type CSSProperties, type ReactNode } from "react";
 
 import {
   deleteTask,
@@ -53,9 +56,21 @@ type Props = {
   projects: ProjectChoice[];
   /** Misiones: cuánto vale terminarla. */
   reward?: Reward;
+  /** Orden manual (Mi día): nodo, asa de arrastre y acciones Subir/Bajar. */
+  sortable?: TaskSortable;
 };
 
-export function TaskItem({ task, today, projects, reward }: Props) {
+export type TaskSortable = {
+  setNodeRef: (node: HTMLElement | null) => void;
+  style?: CSSProperties;
+  dragging?: boolean;
+  handle: ReactNode;
+  onUp?: () => void;
+  onDown?: () => void;
+  onTop?: () => void;
+};
+
+export function TaskItem({ task, today, projects, reward, sortable }: Props) {
   const { pending, run } = useAction();
   const [editing, setEditing] = useState(false);
   const [completing, setCompleting] = useState(false);
@@ -71,11 +86,16 @@ export function TaskItem({ task, today, projects, reward }: Props) {
 
   return (
     <li
+      ref={sortable?.setNodeRef}
+      style={sortable?.style}
       className={cn(
         "flex items-start gap-3 rounded-lg px-2 py-2 hover:bg-muted/50",
+        sortable && "gap-2 pl-0",
         pending && "opacity-60",
+        sortable?.dragging && "relative z-10 bg-background shadow-md ring-1 ring-border",
       )}
     >
+      {sortable?.handle}
       <Checkbox
         className="mt-0.5"
         checked={done}
@@ -170,6 +190,25 @@ export function TaskItem({ task, today, projects, reward }: Props) {
               </DropdownMenuItem>
             )}
           </DropdownMenuGroup>
+          {sortable && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuGroup>
+                <DropdownMenuItem disabled={!sortable.onTop} onClick={sortable.onTop}>
+                  <ArrowUpToLineIcon />
+                  Mover al inicio
+                </DropdownMenuItem>
+                <DropdownMenuItem disabled={!sortable.onUp} onClick={sortable.onUp}>
+                  <ArrowUpIcon />
+                  Subir
+                </DropdownMenuItem>
+                <DropdownMenuItem disabled={!sortable.onDown} onClick={sortable.onDown}>
+                  <ArrowDownIcon />
+                  Bajar
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+            </>
+          )}
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
             <DropdownMenuItem variant="destructive" onClick={() => run(() => deleteTask(task.id), undefined, () => restoreDeleted("tasks", task.id))}>

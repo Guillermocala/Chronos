@@ -19,6 +19,7 @@ import {
   planRealHoursEdit,
 } from "@/lib/tasks/hours";
 import { driveLink, taskCreateSchema, taskUpdateSchema } from "@/lib/tasks/schema";
+import { rebalance } from "@/lib/tickets/ordering";
 import { formatDuration } from "@/lib/time";
 
 // Las tareas aparecen en Hoy, Tareas y el detalle de proyecto: se refresca todo.
@@ -273,6 +274,33 @@ export async function setTaskStatus(
   // Misiones: valor ganado, día cumplido, jefe derrotado y logros nuevos.
   const event = await evaluateQuestProgress(supabase, id, todayCO());
   return { ok: true, ...questMessage(event) };
+}
+
+const reorderSchema = z.array(z.uuid()).min(1).max(200);
+
+/**
+ * Orden manual de Mi día: recibe la lista completa en el nuevo orden y deja
+ * posiciones limpias (1000, 2000…). Solo escribe las que cambian.
+ */
+export async function reorderMyDay(orderedIds: string[]): Promise<ActionResult> {
+  const { supabase } = await requireUser();
+  const parsed = reorderSchema.safeParse(orderedIds);
+  if (!parsed.success || new Set(parsed.data).size !== parsed.data.length) return fail("Orden inválido.");
+
+  const { data: current, error: readError } = await supabase
+    .from("tasks")
+    .select("id, day_position")
+    .in("id", parsed.data);
+  if (readError) return fail("No se pudo cambiar el orden.");
+  const before = new Map(current.map((t) => [t.id, t.day_position]));
+
+  const positions = [...rebalance(parsed.data)].filter(([id, pos]) => before.has(id) && before.get(id) !== pos);
+  const results = await Promise.all(
+    positions.map(([id, day_position]) => supabase.from("tasks").update({ day_position }).eq("id", id)),
+  );
+  if (results.some((r) => r.error)) return fail("No se pudo guardar el orden.");
+  if (positions.length) refresh();
+  return ok();
 }
 
 /** Agrega a Mi día (hoy) o la quita (null). */
