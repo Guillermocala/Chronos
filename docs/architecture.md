@@ -140,7 +140,9 @@ Chronos es un gestor personal de tickets, sprints y valor en COP por proyecto. L
     - `ActionResult.celebrate` lanza el confeti CSS (`components/quests/celebration.tsx`), que no aparece con "reducir movimiento";
     - si las tablas fallan, queda el "¡Hecho!" de siempre;
   - **Hoy** muestra el chip "+$X" en Vencido, Mi día y Vence hoy (`getTaskRewards`);
-  - **resumen del día:** la tarjeta "Hoy" de Misiones muestra las horas estimadas por hacer y las reales frente a las estimadas de lo completado hoy. En /today, "Mi día · por hacer" (valor + horas estimadas) y "Hecho hoy" (horas reales, estimadas y valor; `listDoneToday`).
+  - **resumen del día:** la tarjeta "Hoy" de Misiones muestra las horas estimadas por hacer y las reales frente a las estimadas de lo completado hoy. En /today, "Mi día · por hacer" (valor + horas estimadas) y "Hecho hoy" (horas reales, estimadas y valor; `listDoneToday`);
+  - **encabezados de grupo** (`components/tasks/group-header.tsx` + `summarizeTasks` en `lib/tasks/summary.ts`): conteo, valor y horas estimadas en Misiones, Hoy y Tareas; en "Completadas hoy", horas reales / estimadas. `HoursBadge` muestra "real / ~estimado" en cada tarea y misión completada.
+- **Tareas → "Hoy y próximos 7 días"** (vista `upcoming`): abiertas con `due_date` o `planned_on` ≤ hoy + 7, incluidas vencidas y Mi día atrasado, agrupadas en Vencidas → Hoy → Próximos días. El filtro "Filtrar por fecha" (`?when=overdue|today|week`, con contadores) usa `whenOf` / `matchesWhen` de `lib/tasks/today.ts` y también aplica en "Esperando".
   - **Valor:** una tarea pendiente vale su estimado. Una completada con horas registradas vale las horas reales.
 - **Nueva tarea** (`components/tasks/quick-add-dialog.tsx`), con dos pestañas (se recuerda la última):
   - **Rápida:** una línea con marcadores Granola;

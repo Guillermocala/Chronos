@@ -5,6 +5,7 @@ import { Suspense } from "react";
 
 import { PageHeader } from "@/components/page-header";
 import { StatCard } from "@/components/stat-card";
+import { GroupHeader } from "@/components/tasks/group-header";
 import { ProjectBadge } from "@/components/tasks/project-badge";
 import { QuickAddDialog } from "@/components/tasks/quick-add-dialog";
 import { TimerButton } from "@/components/tickets/timer-button";
@@ -25,6 +26,7 @@ import { listAllPayments, listProjectRates } from "@/lib/data/projects";
 import { getTaskRewards } from "@/lib/data/quests";
 import { listDoneToday, listTodayCandidates } from "@/lib/data/tasks";
 import { realHours } from "@/lib/tasks/hours";
+import { summarizeTasks } from "@/lib/tasks/summary";
 import { getRunningTimer, listTicketsInProgress } from "@/lib/data/tickets";
 import { formatCOP, plural } from "@/lib/format";
 import { groupTodayTasks, TODAY_GROUPS } from "@/lib/tasks/today";
@@ -167,19 +169,12 @@ async function TodayContent({ searchParams }: Pick<PageProps<"/today">, "searchP
         <div className="flex flex-col gap-6">
           {TODAY_GROUPS.filter((g) => groups[g.key].length > 0).map((group) => (
             <section key={group.key} className="flex flex-col gap-2" aria-labelledby={`group-${group.key}`}>
-              <div className="flex items-center gap-2">
-                <h2 id={`group-${group.key}`} className="text-sm font-semibold">
-                  {group.title}
-                </h2>
-                <Badge variant={group.key === "overdue" ? "destructive" : "secondary"}>
-                  {groups[group.key].length}
-                </Badge>
-                {group.key === "myDay" && myDayHours > 0 && (
-                  <span className="text-xs text-muted-foreground">
-                    {formatDuration(myDayHours)} estimadas
-                  </span>
-                )}
-              </div>
+              <GroupHeader
+                id={`group-${group.key}`}
+                title={group.title}
+                summary={summarizeTasks(groups[group.key], rewards)}
+                tone={group.key === "overdue" ? "destructive" : "default"}
+              />
               <TaskList tasks={groups[group.key]} today={today} projects={projects} rewards={rewards} />
             </section>
           ))}

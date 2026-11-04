@@ -8,6 +8,7 @@ import { Meter } from "@/components/quests/meter";
 import { MissionDoneItem } from "@/components/quests/mission-done-item";
 import { MonthChart, WeeksChart } from "@/components/quests/progress-charts";
 import { QuestSettingsDialog } from "@/components/quests/settings-dialog";
+import { GroupHeader } from "@/components/tasks/group-header";
 import { QuickAddDialog } from "@/components/tasks/quick-add-dialog";
 import { TaskList } from "@/components/tasks/task-list";
 import { VoiceDictation } from "@/components/voice/voice-dictation";
@@ -25,6 +26,7 @@ import { formatCOP, plural } from "@/lib/format";
 import { ACHIEVEMENTS } from "@/lib/quests/achievements";
 import { activeGoal, periodRange, type GoalProgress } from "@/lib/quests/goals";
 import type { Reward } from "@/lib/quests/reward";
+import type { GroupSummary } from "@/lib/tasks/summary";
 import { formatDuration } from "@/lib/time";
 import { cn } from "@/lib/utils";
 
@@ -47,6 +49,17 @@ const BOARD_GROUPS: { key: MissionView["group"]; title: string }[] = [
   { key: "myDay", title: "Mi día" },
   { key: "dueToday", title: "Vencen hoy" },
 ];
+
+/** Totales de un grupo de misiones para su encabezado. */
+function missionSummary(items: MissionView[]): GroupSummary {
+  const round2 = (n: number) => Math.round(n * 100) / 100;
+  return {
+    count: items.length,
+    cop: items.reduce((s, m) => s + m.reward.cop, 0),
+    estimated: round2(items.reduce((s, m) => s + (m.estimatedHours ?? 0), 0)),
+    real: round2(items.reduce((s, m) => s + m.realHours, 0)),
+  };
+}
 
 async function QuestsContent({ searchParams }: Pick<PageProps<"/quests">, "searchParams">) {
   await requireUser();
@@ -192,14 +205,14 @@ async function QuestsContent({ searchParams }: Pick<PageProps<"/quests">, "searc
               {BOARD_GROUPS.map((group) => {
                 const items = open.filter((m) => m.group === group.key);
                 if (items.length === 0) return null;
-                const value = items.reduce((s, m) => s + m.reward.cop, 0);
                 return (
                   <div key={group.key} className="flex flex-col gap-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-sm font-semibold">{group.title}</h3>
-                      <Badge variant={group.key === "overdue" ? "destructive" : "secondary"}>{items.length}</Badge>
-                      {value > 0 && <span className="text-xs text-muted-foreground">{formatCOP(value)}</span>}
-                    </div>
+                    <GroupHeader
+                      as="h3"
+                      title={group.title}
+                      summary={missionSummary(items)}
+                      tone={group.key === "overdue" ? "destructive" : "default"}
+                    />
                     <TaskList
                       tasks={items.map((m) => m.task as TaskWithProject)}
                       today={today}
@@ -216,14 +229,23 @@ async function QuestsContent({ searchParams }: Pick<PageProps<"/quests">, "searc
               )}
               {doneToday.length > 0 && (
                 <div className="flex flex-col gap-1">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-semibold">Completadas hoy</h3>
-                    <Badge variant="secondary">{doneToday.length}</Badge>
-                    {day.earned > 0 && <span className="text-xs text-muted-foreground">{formatCOP(day.earned)}</span>}
-                  </div>
+                  <GroupHeader
+                    as="h3"
+                    title="Completadas hoy"
+                    summary={{ ...missionSummary(doneToday), cop: day.earned }}
+                    done
+                  />
                   <ul className="flex flex-col">
                     {doneToday.map((m) => (
-                      <MissionDoneItem key={m.id} id={m.id} title={m.title} project={m.project} reward={m.reward} />
+                      <MissionDoneItem
+                        key={m.id}
+                        id={m.id}
+                        title={m.title}
+                        project={m.project}
+                        reward={m.reward}
+                        estimatedHours={m.estimatedHours}
+                        realHours={m.realHours}
+                      />
                     ))}
                   </ul>
                 </div>

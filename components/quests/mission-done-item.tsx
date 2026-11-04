@@ -1,6 +1,7 @@
 "use client";
 
 import { setTaskStatus } from "@/app/(app)/tasks/actions";
+import { HoursBadge } from "@/components/tasks/hours-badge";
 import { ProjectBadge } from "@/components/tasks/project-badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAction } from "@/hooks/use-action-toast";
@@ -16,11 +17,15 @@ export function MissionDoneItem({
   title,
   project,
   reward,
+  estimatedHours,
+  realHours,
 }: {
   id: string;
   title: string;
   project: TaskWithProject["project"];
   reward: Reward;
+  estimatedHours: number | null;
+  realHours: number;
 }) {
   const { pending, run } = useAction();
   return (
@@ -39,6 +44,7 @@ export function MissionDoneItem({
         <div className="flex flex-wrap items-center gap-1.5 text-xs">
           <RewardBadge reward={reward} done />
           {project && <ProjectBadge {...project} />}
+          <HoursBadge real={realHours} estimated={estimatedHours} />
         </div>
       </div>
     </li>

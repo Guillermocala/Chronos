@@ -26,6 +26,39 @@ export const TODAY_GROUPS: { key: TodayGroupKey; title: string; description: str
 /** Días de anticipación para mostrar el cierre de soporte en Hoy. */
 export const SUPPORT_LOOKAHEAD_DAYS = 3;
 
+/** Filtro por fecha de la vista Tareas ("" = todas). */
+export type TaskWhen = "" | "overdue" | "today" | "week";
+
+export const TASK_WHEN: { key: Exclude<TaskWhen, "">; label: string }[] = [
+  { key: "overdue", label: "Vencidas" },
+  { key: "today", label: "Hoy" },
+  { key: "week", label: "Próximos días" },
+];
+
+/**
+ * En qué tramo cae una tarea abierta:
+ * - vencida: fecha límite antes de hoy;
+ * - hoy: en Mi día (planeada hoy o antes) o vence hoy;
+ * - próximos días: vence o está planeada entre mañana y hoy + 7.
+ */
+export function whenOf(task: Pick<TodayTask, "due_date" | "planned_on">, today: ISODate): Exclude<TaskWhen, ""> | null {
+  const due = task.due_date;
+  if (due !== null && daysBetween(due, today) > 0) return "overdue";
+  if (onOrBefore(task.planned_on, today) || due === today) return "today";
+  const horizon = addDays(today, 7);
+  const inWeek = (d: ISODate | null) => d !== null && daysBetween(today, d) > 0 && daysBetween(d, horizon) >= 0;
+  if (inWeek(due) || inWeek(task.planned_on)) return "week";
+  return null;
+}
+
+export function matchesWhen(
+  task: Pick<TodayTask, "due_date" | "planned_on">,
+  when: TaskWhen,
+  today: ISODate,
+): boolean {
+  return when === "" || whenOf(task, today) === when;
+}
+
 const isOpen = (t: TodayTask) => t.status === "open" || t.status === "waiting";
 const onOrBefore = (date: ISODate | null, limit: ISODate) =>
   date !== null && daysBetween(date, limit) >= 0;

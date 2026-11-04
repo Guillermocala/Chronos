@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { TASK_VIEWS, type TaskView } from "@/lib/data/task-views";
+import { TASK_WHEN, type TaskWhen } from "@/lib/tasks/today";
 
 import type { ProjectChoice } from "./task-dialog";
 
@@ -16,9 +17,12 @@ type Props = {
   project?: string;
   tag?: string;
   projects: ProjectChoice[];
+  /** Filtro por fecha; sin `whenCounts` no se muestra (vistas sin fechas). */
+  when?: TaskWhen;
+  whenCounts?: Record<Exclude<TaskWhen, "">, number>;
 };
 
-export function TaskFilters({ view, project, tag, projects }: Props) {
+export function TaskFilters({ view, project, tag, projects, when = "", whenCounts }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -63,6 +67,21 @@ export function TaskFilters({ view, project, tag, projects }: Props) {
             </NativeSelectOption>
           ))}
         </NativeSelect>
+        {whenCounts && (
+          <NativeSelect
+            size="sm"
+            aria-label="Filtrar por fecha"
+            value={when}
+            onChange={(e) => router.push(hrefWith({ when: e.target.value || undefined }))}
+          >
+            <NativeSelectOption value="">Todas las fechas</NativeSelectOption>
+            {TASK_WHEN.map((w) => (
+              <NativeSelectOption key={w.key} value={w.key}>
+                {w.label} ({whenCounts[w.key]})
+              </NativeSelectOption>
+            ))}
+          </NativeSelect>
+        )}
         {tag && (
           <Badge variant="secondary" render={<Link href={hrefWith({ tag: undefined })} />}>
             #{tag}

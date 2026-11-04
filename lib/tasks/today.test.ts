@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { groupTodayTasks, type TodayTask } from "./today";
+import { groupTodayTasks, matchesWhen, whenOf, type TodayTask } from "./today";
 
 const today = "2026-10-20";
 let n = 0;
@@ -55,5 +55,26 @@ describe("groupTodayTasks", () => {
     const low = task({ due_date: today, priority: 3 });
     const high = task({ due_date: today, priority: 1 });
     expect(ids(groupTodayTasks([low, high], today).dueToday)).toEqual([high.id, low.id]);
+  });
+});
+
+describe("filtro por fecha (Tareas)", () => {
+  it("clasifica vencidas, hoy y próximos días", () => {
+    expect(whenOf(task({ due_date: "2026-10-19" }), today)).toBe("overdue");
+    // Vencida aunque esté en Mi día.
+    expect(whenOf(task({ due_date: "2026-10-18", planned_on: today }), today)).toBe("overdue");
+    expect(whenOf(task({ planned_on: "2026-10-19" }), today)).toBe("today"); // Mi día de ayer
+    expect(whenOf(task({ due_date: today }), today)).toBe("today");
+    expect(whenOf(task({ due_date: "2026-10-21" }), today)).toBe("week");
+    expect(whenOf(task({ planned_on: "2026-10-27" }), today)).toBe("week"); // hoy + 7
+    expect(whenOf(task({ due_date: "2026-10-28" }), today)).toBeNull(); // día 8
+    expect(whenOf(task({}), today)).toBeNull();
+  });
+
+  it("matchesWhen: vacío deja pasar todo", () => {
+    const t = task({ due_date: "2026-10-21" });
+    expect(matchesWhen(t, "", today)).toBe(true);
+    expect(matchesWhen(t, "week", today)).toBe(true);
+    expect(matchesWhen(t, "overdue", today)).toBe(false);
   });
 });

@@ -59,11 +59,11 @@ export async function listTasks(filters: TaskFilters, today: ISODate): Promise<T
 
   switch (filters.view) {
     case "upcoming": {
-      const from = addDays(today, 1);
+      // Hoy y próximos 7 días: incluye vencidas y lo que quedó en Mi día de días anteriores.
       const to = addDays(today, 7);
       query = query
         .in("status", ["open", "waiting"])
-        .or(`and(due_date.gte.${from},due_date.lte.${to}),and(planned_on.gte.${from},planned_on.lte.${to})`)
+        .or(`due_date.lte.${to},planned_on.lte.${to}`)
         .order("due_date", { ascending: true, nullsFirst: false });
       break;
     }

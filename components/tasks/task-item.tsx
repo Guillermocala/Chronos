@@ -8,7 +8,6 @@ import {
   HourglassIcon,
   PencilIcon,
   TicketIcon,
-  TimerIcon,
   Trash2Icon,
 } from "lucide-react";
 import Link from "next/link";
@@ -40,10 +39,10 @@ import type { TaskWithProject } from "@/lib/data/tasks";
 import { relativeDay } from "@/lib/format";
 import type { Reward } from "@/lib/quests/reward";
 import { defaultCompletionHours, realHours } from "@/lib/tasks/hours";
-import { formatDuration } from "@/lib/time";
 import { cn } from "@/lib/utils";
 
 import { DocLink } from "./doc-link";
+import { HoursBadge } from "./hours-badge";
 import { ProjectBadge } from "./project-badge";
 import { CompleteTaskDialog } from "./complete-task-dialog";
 import { TaskDialog, type ProjectChoice } from "./task-dialog";
@@ -66,7 +65,6 @@ export function TaskItem({ task, today, projects, reward }: Props) {
   const waitingDays = daysBetween(task.created_at.slice(0, 10), today);
   const loggedHours = realHours(task);
   const estimate = task.estimated_hours != null ? Number(task.estimated_hours) : null;
-  const overEstimate = estimate !== null && loggedHours > estimate + 0.005;
   // Al completarla se pregunta cuánto tomó (opcional: si no, se registra lo estimado).
   // Las automáticas (entregas, cobros) no llevan horas.
   const askHours = !task.auto_source;
@@ -117,26 +115,7 @@ export function TaskItem({ task, today, projects, reward }: Props) {
             </Badge>
           )}
           {inMyDay && !done && <Badge variant="secondary">Mi día</Badge>}
-          {loggedHours > 0 ? (
-            <Badge
-              variant={overEstimate ? "destructive" : "secondary"}
-              title={
-                estimate !== null
-                  ? `Real ${formatDuration(loggedHours)} / estimado ${formatDuration(estimate)}`
-                  : "Horas reales"
-              }
-            >
-              <TimerIcon data-icon="inline-start" />
-              {formatDuration(loggedHours)}
-              {estimate !== null && ` / ~${formatDuration(estimate)}`}
-            </Badge>
-          ) : (
-            estimate !== null && (
-              <Badge variant="outline" title="Horas estimadas">
-                ~{formatDuration(estimate)}
-              </Badge>
-            )
-          )}
+          <HoursBadge real={loggedHours} estimated={estimate} />
           {task.is_ticket_candidate && <Badge variant="outline">Convertir a ticket</Badge>}
           {task.recurring_task_id && (
             <Link href="/tasks?view=recurring" className="hover:underline" title="Tarea recurrente">
